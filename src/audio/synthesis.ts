@@ -18,17 +18,20 @@ export function triggerKick(t: number): void {
   const g = actx.createGain();
   osc.frequency.setValueAtTime(150, t);
   osc.frequency.exponentialRampToValueAtTime(40, t + 0.09);
-  g.gain.setValueAtTime(1.4, t);
+  g.gain.setValueAtTime(0.6, t);
   g.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
   osc.connect(g);
   g.connect(filterNode);
   osc.start(t);
   osc.stop(t + 0.42);
 
-  // Side-chain pump: dip master at the kick, recover over ~220ms
+  // Side-chain pump: dip master at the kick, recover over ~220ms. Ramp into
+  // the dip over 5ms instead of stepping — stepping pumpGain produces an
+  // audible click on any sustained content (bass, pad, reverb wash).
   if (state.pumpAmount > 0) {
     pumpGain.gain.cancelScheduledValues(t);
-    pumpGain.gain.setValueAtTime(1 - state.pumpAmount * 0.8, t);
+    pumpGain.gain.setValueAtTime(pumpGain.gain.value, t);
+    pumpGain.gain.linearRampToValueAtTime(1 - state.pumpAmount * 0.8, t + 0.005);
     pumpGain.gain.linearRampToValueAtTime(1, t + 0.22);
   }
 }

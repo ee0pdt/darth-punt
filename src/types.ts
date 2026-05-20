@@ -23,6 +23,8 @@ export type StepGrid = number[][];
 export interface AudioRefs {
   actx: AudioContext;
   masterGain: GainNode;
+  masterLimiter: DynamicsCompressorNode;
+  masterClipper: WaveShaperNode;
   filterNode: BiquadFilterNode;
   reverbNode: ConvolverNode;
   reverbGain: GainNode;
