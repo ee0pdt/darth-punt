@@ -13,6 +13,13 @@ import type { PatternName } from "../types.ts";
 import { setDramaReadout } from "./readouts.ts";
 import { getAudio } from "../audio/graph.ts";
 
+const PATTERN_LABELS: Record<string, string> = {
+  tron: "TRON",
+  daft: "DAFT",
+  derezzed: "DEREZZED",
+  random: "RANDOM",
+};
+
 export interface ControlHandlers {
   onPlay(): void;
   onTension(): void;
@@ -25,27 +32,58 @@ interface KnobBinding {
   onChange: (v: number) => void;
 }
 
+function updateSliderFill(slider: HTMLInputElement): void {
+  const min = parseFloat(slider.min || "0");
+  const max = parseFloat(slider.max || "100");
+  const v = parseFloat(slider.value);
+  const pct = max > min ? ((v - min) / (max - min)) * 100 : 0;
+  slider.style.setProperty("--pct", `${pct}%`);
+}
+
 export function mountControls(handlers: ControlHandlers): void {
   document.getElementById("playBtn")?.addEventListener("click", handlers.onPlay);
   document.getElementById("tensionBtn")?.addEventListener("click", handlers.onTension);
   document.getElementById("clearBtn")?.addEventListener("click", clearAll);
 
-  // Pattern buttons
+  // Pattern trigger — opens drawer on PATTERNS tab
+  const patternTrigger = document.getElementById("patternTrigger");
+  const patternTriggerVal = document.getElementById("patternTriggerVal");
+  patternTrigger?.addEventListener("click", () => {
+    const drawer = document.getElementById("drawer");
+    const handle = document.getElementById("drawerHandle");
+    if (drawer && handle && !drawer.classList.contains("open")) {
+      drawer.classList.add("open");
+      drawer.setAttribute("aria-hidden", "false");
+      handle.setAttribute("aria-expanded", "true");
+    }
+    document.querySelectorAll<HTMLElement>(".drawer-tab").forEach((t) => {
+      const match = t.dataset.tab === "patterns";
+      t.classList.toggle("active", match);
+      t.setAttribute("aria-selected", match ? "true" : "false");
+    });
+    document.querySelectorAll<HTMLElement>(".drawer-pane").forEach((p) => {
+      p.classList.toggle("active", p.dataset.pane === "patterns");
+    });
+  });
+
+  // Pattern selection buttons (live inside PATTERNS tab)
   document.querySelectorAll<HTMLElement>("[data-pattern]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const name = btn.dataset.pattern as PatternName;
       loadPattern(name);
+      if (patternTriggerVal) {
+        patternTriggerVal.textContent = PATTERN_LABELS[name] ?? name.toUpperCase();
+      }
     });
   });
 
-  // Evolution toggle buttons
-  document.querySelectorAll<HTMLElement>("[data-toggle]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.toggle;
+  // Evolution toggle switches
+  document.querySelectorAll<HTMLInputElement>("input[data-toggle]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const key = input.dataset.toggle;
       if (!key) return;
       const bag = state as unknown as Record<string, boolean>;
-      bag[key] = !bag[key];
-      btn.classList.toggle("active", bag[key]);
+      bag[key] = input.checked;
     });
   });
 
@@ -157,10 +195,12 @@ export function mountControls(handlers: ControlHandlers): void {
     const slider = document.getElementById(k.id);
     if (!(slider instanceof HTMLInputElement)) continue;
     const valEl = document.getElementById(k.valId);
+    updateSliderFill(slider);
     slider.addEventListener("input", () => {
       const v = parseFloat(slider.value);
       k.onChange(v);
       if (valEl) valEl.textContent = k.format(v);
+      updateSliderFill(slider);
     });
   }
 }

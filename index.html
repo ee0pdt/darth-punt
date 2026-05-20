@@ -13,23 +13,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 
 :root {
-  --cyan: #00f5ff;
-  --orange: #ff6b00;
-  --purple: #9b59ff;
-  --dark: #010608;
-  --panel: #040d18;
-  --glow-cyan: 0 0 8px #00f5ff, 0 0 24px #00f5ff33;
-  --glow-orange: 0 0 8px #ff6b00, 0 0 24px #ff6b0033;
-  --glow-purple: 0 0 8px #9b59ff, 0 0 24px #9b59ff33;
-  --glow-dim: 0 0 4px #00f5ff44;
+  --bg: #05090d;
+  --surface: #0a1219;
+  --surface-2: #0e1822;
+  --line: rgba(120, 180, 200, 0.10);
+  --cyan: #5cd3ff;
+  --cyan-dim: rgba(92, 211, 255, 0.45);
+  --cyan-low: rgba(92, 211, 255, 0.18);
+  --warn: #ff8a3d;
+  --text: #cfe6f0;
+  --text-dim: rgba(207, 230, 240, 0.55);
+  --glow-cyan: 0 0 8px var(--cyan), 0 0 24px rgba(92, 211, 255, 0.2);
+  --glow-warn: 0 0 8px var(--warn), 0 0 24px rgba(255, 138, 61, 0.2);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
 
 body {
-  background: var(--dark);
-  color: var(--cyan);
-  font-family: 'Share Tech Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Share Tech Mono", monospace;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -40,33 +43,17 @@ body {
   position: relative;
 }
 
-body::before {
-  content:'';
-  position:fixed; inset:0;
-  background-image:
-    linear-gradient(rgba(0,245,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,245,255,0.025) 1px, transparent 1px);
-  background-size: 48px 48px;
-  pointer-events:none; z-index:0;
-}
-
-/* Scan line */
-.scanline {
-  position:fixed; top:0; left:0; right:0; height:2px;
-  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-  animation: scan 5s linear infinite;
-  opacity:0.15; pointer-events:none; z-index:100;
-}
-@keyframes scan { 0%{top:0} 100%{top:100vh} }
-
 /* Tension overlay */
 .tension-overlay {
-  position:fixed; inset:0;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(155,89,255,0.15) 100%);
-  opacity:0; pointer-events:none; z-index:5;
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(255, 138, 61, 0.12) 100%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
   transition: opacity 1s ease;
 }
-.tension-overlay.active { opacity:1; }
+.tension-overlay.active { opacity: 1; }
 
 .container {
   position:relative; z-index:10;
@@ -78,7 +65,7 @@ body::before {
 header {
   display:flex; align-items:center; justify-content:space-between;
   padding-bottom:12px;
-  border-bottom:1px solid rgba(0,245,255,0.12);
+  border-bottom:1px solid var(--line);
 }
 
 .logo {
@@ -89,43 +76,51 @@ h1 {
   font-family:'Orbitron',sans-serif; font-weight:900;
   font-size: clamp(1.6rem, 4vw, 2.6rem);
   letter-spacing:0.25em;
-  background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--cyan) 100%);
   -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  filter: drop-shadow(0 0 12px rgba(0,245,255,0.4));
+  filter: drop-shadow(0 0 12px rgba(92,211,255,0.4));
 }
 
-.subtitle {
-  font-size:0.5rem; letter-spacing:0.4em;
-  color:rgba(0,245,255,0.35);
-}
+.subtitle { font-size: 0.6875rem; letter-spacing: 0.16em; color: var(--text-dim); }
 
 .header-readouts {
-  display:flex; gap:20px; align-items:center; flex-wrap:wrap;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.readout {
-  font-family:'Orbitron',sans-serif;
-  font-size:0.65rem; letter-spacing:0.15em;
-  display:flex; flex-direction:column; align-items:center; gap:2px;
+.readout-inline {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
 }
-.readout .val { font-size:1rem; font-weight:700; }
-.readout .lbl { font-size:0.45rem; opacity:0.5; }
-.readout.cyan .val  { color:var(--cyan);   text-shadow:var(--glow-cyan); }
-.readout.orange .val{ color:var(--orange); text-shadow:var(--glow-orange); }
-.readout.purple .val{ color:var(--purple); text-shadow:var(--glow-purple); }
+.readout-inline .lbl {
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.readout-inline .val {
+  color: var(--cyan);
+  font-weight: 700;
+}
 
 /* Visualiser */
 .viz-wrap {
   height:90px;
-  background:var(--panel);
-  border:1px solid rgba(0,245,255,0.08);
+  background:var(--surface);
+  border:1px solid var(--line);
   position:relative; overflow:hidden;
 }
 canvas#viz { width:100%; height:100%; display:block; }
 
 .chord-flash {
   position:absolute; inset:0;
-  background:rgba(155,89,255,0.2);
+  background:rgba(92,211,255,0.2);
   opacity:0; pointer-events:none;
 }
 .chord-flash.active { opacity:1; transition:none; }
@@ -140,30 +135,42 @@ canvas#viz { width:100%; height:100%; display:block; }
   display:flex; align-items:center; gap:8px;
 }
 
-.auto-label {
-  width:70px; font-size:0.5rem; letter-spacing:0.12em;
-  color:rgba(0,245,255,0.35); text-align:right; flex-shrink:0;
-}
+.auto-label { width: 70px; font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--text-dim); text-align: right; flex-shrink: 0; }
 
 .auto-track {
   flex:1; height:3px;
-  background:rgba(0,245,255,0.06);
+  background:rgba(92,211,255,0.06);
   position:relative;
 }
 
 .auto-fill {
-  height:100%; width:0%;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(92, 211, 255, 0.1), var(--cyan));
   transition: width 0.4s linear;
 }
 
-.auto-fill.cyan   { background:linear-gradient(90deg,#00f5ff11,var(--cyan)); box-shadow:var(--glow-dim); }
-.auto-fill.orange { background:linear-gradient(90deg,#ff6b0011,var(--orange)); box-shadow:0 0 4px #ff6b0055; }
-.auto-fill.purple { background:linear-gradient(90deg,#9b59ff11,var(--purple)); box-shadow:0 0 4px #9b59ff55; }
-
-.auto-val {
-  width:42px; font-size:0.5rem;
-  color:rgba(0,245,255,0.5); text-align:left; flex-shrink:0;
+.auto-meter {
+  display: inline-block;
+  position: relative;
+  width: 42px;
+  height: 3px;
+  margin: 0 8px;
+  background: rgba(92, 211, 255, 0.06);
+  vertical-align: middle;
 }
+.auto-meter-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(92, 211, 255, 0.1), var(--cyan));
+  transition: width 0.4s linear;
+}
+.auto-meter-val {
+  display: none;
+}
+
+.auto-val { width: 42px; font-size: 0.6875rem; color: var(--text-dim); text-align: left; flex-shrink: 0; }
 
 /* Sequencer */
 .sequencer { display:flex; flex-direction:column; gap:4px; }
@@ -171,157 +178,569 @@ canvas#viz { width:100%; height:100%; display:block; }
 .track { display:flex; align-items:center; gap:6px; }
 
 .track-left {
-  display:flex; align-items:center; gap:4px; width:80px; flex-shrink:0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 80px;
+  flex-shrink: 0;
 }
 
 .mute-btn {
-  width:14px; height:14px;
-  border:1px solid rgba(0,245,255,0.2);
-  background:transparent; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; transition:all 0.1s;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--cyan-low);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.1s;
+  padding: 0;
 }
-.mute-btn:hover { border-color:var(--orange); }
-.mute-btn.muted { background:rgba(255,107,0,0.2); border-color:var(--orange); }
-.mute-btn::after { content:''; width:6px; height:1px; background:currentColor; }
+.mute-btn:hover {
+  border-color: var(--cyan);
+}
+.mute-btn.muted {
+  background: var(--cyan-low);
+  border-color: var(--cyan-dim);
+}
+.mute-btn::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: var(--cyan-dim);
+}
+.mute-btn.muted::after {
+  background: var(--text-dim);
+}
 
-.track-label {
-  font-size:0.5rem; letter-spacing:0.1em;
-  color:rgba(0,245,255,0.4); text-align:right; flex:1;
-}
-.track-label.orange { color:rgba(255,107,0,0.45); }
-.track-label.purple { color:rgba(155,89,255,0.45); }
+.track-label { font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--text-dim); text-align: right; flex: 1; }
 
 .steps {
-  display:grid; grid-template-columns:repeat(16,1fr);
-  gap:3px; flex:1;
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 3px;
+  flex: 1;
 }
 
 .step {
-  aspect-ratio:1;
-  border:1px solid rgba(0,245,255,0.08);
-  background:var(--panel);
-  cursor:pointer;
-  transition:background 0.06s, box-shadow 0.06s;
+  aspect-ratio: 1;
+  min-height: 32px;
+  border: 1px solid var(--cyan-low);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background 0.06s, box-shadow 0.06s;
 }
 
-.step.on              { background:rgba(0,245,255,0.16); border-color:rgba(0,245,255,0.4); }
-.step.on.beat-orange  { background:rgba(255,107,0,0.16); border-color:rgba(255,107,0,0.4); }
-.step.on.beat-purple  { background:rgba(155,89,255,0.16); border-color:rgba(155,89,255,0.4); }
-.step.active          { background:var(--cyan)!important;   border-color:var(--cyan)!important;   box-shadow:var(--glow-cyan)!important; }
-.step.active.beat-orange { background:var(--orange)!important; border-color:var(--orange)!important; box-shadow:var(--glow-orange)!important; }
-.step.active.beat-purple { background:var(--purple)!important; border-color:var(--purple)!important; box-shadow:var(--glow-purple)!important; }
-.steps .step:nth-child(4n+1) { border-left-color:rgba(0,245,255,0.2); }
+.step.on {
+  background: rgba(92, 211, 255, 0.16);
+  border-color: var(--cyan-dim);
+}
+.step.active {
+  background: var(--cyan) !important;
+  border-color: var(--cyan) !important;
+  box-shadow: var(--glow-cyan) !important;
+}
+
+.steps .step:nth-child(4n+1) {
+  border-left: 2px solid var(--cyan-low);
+}
 
 /* Controls row */
 .controls {
   display:flex; align-items:center; gap:10px; flex-wrap:wrap;
 }
 
-.btn {
-  font-family:'Orbitron',sans-serif;
-  font-size:0.6rem; letter-spacing:0.18em;
-  padding:9px 18px;
-  border:1px solid var(--cyan);
-  background:transparent; color:var(--cyan);
-  cursor:pointer; transition:all 0.12s;
-  white-space:nowrap;
+/* Primary buttons — PLAY, TENSION */
+.btn-primary {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  height: 44px;
+  padding: 0 24px;
+  border: 1px solid var(--cyan);
+  background: transparent;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: background 0.1s, box-shadow 0.1s;
+  white-space: nowrap;
 }
-.btn:hover          { background:rgba(0,245,255,0.08); box-shadow:var(--glow-cyan); }
-.btn.active         { background:var(--cyan); color:var(--dark); box-shadow:var(--glow-cyan); }
-.btn.orange         { border-color:var(--orange); color:var(--orange); }
-.btn.orange:hover   { background:rgba(255,107,0,0.08); box-shadow:var(--glow-orange); }
-.btn.orange.active  { background:var(--orange); color:var(--dark); }
-.btn.purple         { border-color:var(--purple); color:var(--purple); }
-.btn.purple:hover   { background:rgba(155,89,255,0.08); box-shadow:var(--glow-purple); }
-.btn.purple.active  { background:var(--purple); color:var(--dark); }
-
-/* Knob panels */
-.knob-panel {
-  display:flex; flex-direction:column; gap:8px;
-  background:var(--panel);
-  border:1px solid rgba(0,245,255,0.08);
-  padding:10px 14px;
+.btn-primary:hover {
+  background: rgba(92, 211, 255, 0.08);
+  box-shadow: var(--glow-cyan);
+}
+.btn-primary.active {
+  background: var(--cyan);
+  color: var(--bg);
+  box-shadow: var(--glow-cyan);
+}
+.btn-primary.warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.btn-primary.warn:hover {
+  background: rgba(255, 138, 61, 0.08);
+  box-shadow: var(--glow-warn);
+}
+.btn-primary.warn.active {
+  background: var(--warn);
+  color: var(--bg);
+  box-shadow: var(--glow-warn);
 }
 
-.knob-panel-title {
-  font-size:0.48rem; letter-spacing:0.2em;
-  color:rgba(0,245,255,0.3);
-  border-bottom:1px solid rgba(0,245,255,0.08);
-  padding-bottom:5px; margin-bottom:2px;
+/* Secondary — pattern dropdown trigger, drawer tab triggers, etc. */
+.btn-secondary {
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--cyan-low);
+  background: transparent;
+  color: var(--cyan-dim);
+  cursor: pointer;
+  transition: all 0.1s;
+  white-space: nowrap;
+}
+.btn-secondary:hover, .btn-secondary.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(92, 211, 255, 0.06);
 }
 
-.knob-row { display:flex; gap:16px; flex-wrap:wrap; }
-
-.knob-wrap {
-  display:flex; flex-direction:column; align-items:center; gap:3px;
+/* Slider rows — used in MIX drawer tab */
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+  min-height: 44px;
+  justify-content: center;
 }
-.knob-wrap label { font-size:0.46rem; letter-spacing:0.1em; color:rgba(0,245,255,0.45); }
-
-input[type=range] {
-  -webkit-appearance:none; width:68px; height:2px;
-  background:rgba(0,245,255,0.12); outline:none;
+.slider-row .slider-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
 }
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance:none; width:8px; height:8px;
-  background:var(--cyan); box-shadow:var(--glow-cyan); cursor:pointer;
-}
-.knob-val { font-size:0.46rem; color:rgba(0,245,255,0.55); }
+.slider-row .slider-head .lbl { color: var(--text-dim); }
+.slider-row .slider-head .val { color: var(--cyan); }
 
-/* Two column layout for knobs */
-.panels-row { display:flex; gap:10px; flex-wrap:wrap; }
-.panels-row .knob-panel { flex:1; min-width:200px; }
-
-/* Evolution row */
-.evo-row {
-  display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    var(--cyan-low) 0%,
+    var(--cyan-low) var(--pct, 0%),
+    var(--surface-2) var(--pct, 0%),
+    var(--surface-2) 100%
+  );
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
 }
-.evo-label { font-size:0.5rem; letter-spacing:0.14em; color:rgba(0,245,255,0.3); margin-right:4px; }
-
-.tag-btn {
-  font-family:'Share Tech Mono',monospace;
-  font-size:0.54rem; letter-spacing:0.08em;
-  padding:4px 9px;
-  border:1px solid rgba(0,245,255,0.18);
-  background:transparent; color:rgba(0,245,255,0.4);
-  cursor:pointer; transition:all 0.1s;
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 4px;
+  height: 16px;
+  background: var(--cyan);
+  box-shadow: var(--glow-cyan);
+  cursor: pointer;
+  border: none;
+  border-radius: 0;
 }
-.tag-btn:hover,.tag-btn.active { border-color:var(--cyan); color:var(--cyan); box-shadow:var(--glow-dim); }
-.tag-btn.ot { border-color:rgba(255,107,0,0.18); color:rgba(255,107,0,0.4); }
-.tag-btn.ot:hover,.tag-btn.ot.active { border-color:var(--orange); color:var(--orange); }
-.tag-btn.pt { border-color:rgba(155,89,255,0.18); color:rgba(155,89,255,0.4); }
-.tag-btn.pt:hover,.tag-btn.pt.active { border-color:var(--purple); color:var(--purple); }
+input[type="range"].slider::-moz-range-thumb {
+  width: 4px;
+  height: 16px;
+  background: var(--cyan);
+  box-shadow: var(--glow-cyan);
+  cursor: pointer;
+  border: none;
+  border-radius: 0;
+}
+input[type="range"].slider:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 4px;
+}
+
+.slider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 24px;
+}
+
+/* Toggle switch — iOS-class, Tron themed */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.toggle input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--cyan-low);
+  background: transparent;
+  transition: border-color 0.12s, background 0.12s;
+}
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: 1px solid rgba(207, 230, 240, 0.35);
+  transition:
+    transform 120ms cubic-bezier(0.4, 0, 0.2, 1),
+    background 0.12s,
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+.toggle input:checked ~ .toggle-track {
+  border-color: var(--cyan);
+  background: rgba(92, 211, 255, 0.06);
+}
+.toggle input:checked ~ .toggle-knob {
+  transform: translateX(22px);
+  background: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: var(--glow-cyan);
+}
+.toggle input:focus-visible ~ .toggle-track {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.toggle-label {
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  transition: color 0.12s;
+}
+.toggle-row:has(.toggle input:checked) .toggle-label {
+  color: var(--text);
+}
+
+.toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
 
 /* Status */
 .status-row { display:flex; justify-content:space-between; align-items:center; }
-.status { font-size:0.55rem; letter-spacing:0.18em; color:rgba(0,245,255,0.25); }
+.status { font-size: 0.6875rem; letter-spacing: 0.16em; color: var(--text-dim); }
 .status.playing { color:var(--cyan); animation:pulse 1.4s ease-in-out infinite; }
-.event-log { font-size:0.52rem; letter-spacing:0.12em; color:var(--purple); text-shadow:var(--glow-purple); opacity:0; transition:opacity 0.25s; }
+.event-log { font-size: 0.6875rem; letter-spacing: 0.1em; color: var(--cyan); text-shadow: var(--glow-cyan); opacity: 0; transition: opacity 0.25s; }
 .event-log.show { opacity:1; }
 @keyframes pulse { 0%,100%{opacity:0.35} 50%{opacity:1} }
 
-/* Tension button special */
-.tension-btn {
-  font-family:'Orbitron',sans-serif;
-  font-size:0.6rem; letter-spacing:0.18em;
-  padding:9px 18px;
-  border:1px solid var(--purple);
-  background:transparent; color:var(--purple);
-  cursor:pointer; transition:all 0.12s;
+@keyframes tensionPulse {
+  0%, 100% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: var(--glow-warn);
+  }
+}
+#tensionBtn:not(.active) {
   animation: tensionPulse 2s ease-in-out infinite;
 }
-@keyframes tensionPulse { 0%,100%{box-shadow:none} 50%{box-shadow:var(--glow-purple)} }
-.tension-btn:hover { background:rgba(155,89,255,0.15); box-shadow:var(--glow-purple); }
-.tension-btn.releasing {
-  background:var(--purple); color:var(--dark);
-  box-shadow:var(--glow-purple);
-  animation:none;
+#tensionBtn.releasing {
+  background: var(--warn);
+  color: var(--bg);
+  box-shadow: var(--glow-warn);
+  animation: none;
+}
+
+/* Drawer handle */
+.drawer-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 32px;
+  border: none;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+}
+.drawer-handle:hover {
+  color: var(--cyan);
+  background: rgba(92, 211, 255, 0.04);
+}
+.drawer-handle-icon {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* Drawer body */
+.drawer {
+  width: 100%;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 240ms ease-out;
+}
+.drawer.open {
+  max-height: 360px;
+}
+
+.drawer-tabs {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-close {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--cyan-low);
+  color: var(--cyan-dim);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: color 0.1s, border-color 0.1s;
+}
+.drawer-close:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.drawer-body {
+  padding: 14px;
+}
+.drawer-pane {
+  display: none;
+}
+.drawer-pane.active {
+  display: block;
+}
+
+.pattern-trigger-lbl {
+  color: var(--text-dim);
+  margin-right: 8px;
+}
+.pattern-trigger-val {
+  color: var(--cyan);
+  margin-right: 8px;
+}
+.pattern-trigger-chev {
+  color: var(--cyan-dim);
+}
+#patternTrigger {
+  gap: 6px;
+  padding: 0 14px;
+}
+
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.pattern-divider {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 18px 0 12px;
+}
+.btn-secondary.danger {
+  border-color: rgba(255, 138, 61, 0.4);
+  color: var(--warn);
+}
+.btn-secondary.danger:hover {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: rgba(255, 138, 61, 0.08);
+  box-shadow: var(--glow-warn);
+}
+
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.drawer-handle:focus-visible,
+.drawer-close:focus-visible,
+.mute-btn:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+.btn-primary.warn:focus-visible {
+  outline-color: var(--warn);
+}
+.step:focus-visible {
+  outline: 1px solid var(--cyan);
+  outline-offset: 1px;
+  z-index: 2;
+  position: relative;
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 12px 0 24px;
+  }
+  .container {
+    width: 100vw;
+    gap: 10px;
+    padding: 0 12px;
+  }
+
+  /* Compact header */
+  header {
+    padding-bottom: 8px;
+  }
+  h1 {
+    font-size: clamp(1.2rem, 5vw, 1.6rem);
+  }
+  .subtitle {
+    display: none;
+  }
+  .header-readouts {
+    gap: 10px;
+  }
+  .readout-inline {
+    font-size: 0.75rem;
+  }
+  .readout-inline .lbl {
+    display: none;
+  }
+  .header-readouts .readout-inline + .readout-inline::before {
+    content: "·";
+    color: var(--text-dim);
+    margin-right: 8px;
+  }
+
+  /* Step cells */
+  .step {
+    min-height: 28px;
+  }
+  .steps .step:nth-child(4n+1) {
+    border-left: 1px solid var(--cyan-low);
+  }
+  .track-left {
+    width: 60px;
+    gap: 4px;
+  }
+  .mute-btn {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Transport stacks */
+  .controls {
+    gap: 8px;
+  }
+  .btn-primary {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    padding: 0 12px;
+    font-size: 0.65rem;
+  }
+  #patternTrigger {
+    flex: 1 1 100%;
+  }
+
+  /* Drawer becomes a bottom sheet overlay */
+  .drawer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    max-height: 0;
+    z-index: 50;
+    transition: max-height 240ms ease-out;
+    box-shadow: 0 -1px 0 var(--line), 0 -16px 24px rgba(0, 0, 0, 0.4);
+  }
+  .drawer.open {
+    max-height: 65vh;
+  }
+  .drawer-body {
+    max-height: calc(65vh - 56px);
+    overflow-y: auto;
+  }
+  .drawer-handle {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    z-index: 40;
+  }
+
+  /* Toggle grid 2 columns on mobile, label below switch */
+  .toggle-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .toggle-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* Slider grid 1 column on mobile */
+  .slider-grid {
+    grid-template-columns: 1fr;
+    gap: 6px 0;
+  }
+  .pattern-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    transition: none;
+  }
+  .toggle-knob {
+    transition: none;
+  }
+  #tensionBtn:not(.active) {
+    animation: none;
+  }
+  .status.playing {
+    animation: none;
+  }
+  .step.active {
+    transition: none;
+  }
 }
 </style>
 </head>
 <body>
 
-<div class="scanline"></div>
 <div class="tension-overlay" id="tensionOverlay"></div>
 
 <div class="container">
@@ -332,19 +751,13 @@ input[type=range]::-webkit-slider-thumb {
       <div class="subtitle">CINEMATIC GENERATIVE SEQUENCER</div>
     </div>
     <div class="header-readouts">
-      <div class="readout cyan">
-        <div class="val" id="barVal">—</div>
-        <div class="lbl">BAR</div>
-      </div>
-      <div class="readout orange">
-        <div class="val" id="bpmReadout">120</div>
-        <div class="lbl">BPM</div>
-      </div>
-      <div class="readout purple">
-        <div class="val" id="dramaReadout">5</div>
-        <div class="lbl">DRAMA</div>
-      </div>
-    </div>
+  <span class="readout-inline"><span class="lbl">BAR</span> <span class="val" id="barVal"
+    >—</span></span>
+  <span class="readout-inline"><span class="lbl">BPM</span> <span class="val" id="bpmReadout"
+    >120</span></span>
+  <span class="readout-inline"><span class="lbl">D</span> <span class="val" id="dramaReadout"
+    >5</span></span>
+</div>
   </header>
 
   <!-- Visualiser -->
@@ -357,23 +770,13 @@ input[type=range]::-webkit-slider-thumb {
   <div class="auto-bars">
     <div class="auto-row">
       <div class="auto-label">FILTER</div>
-      <div class="auto-track"><div class="auto-fill cyan" id="fillFilter"></div></div>
+      <div class="auto-track"><div class="auto-fill" id="fillFilter"></div></div>
       <div class="auto-val" id="valFilter">—</div>
     </div>
     <div class="auto-row">
-      <div class="auto-label">REVERB</div>
-      <div class="auto-track"><div class="auto-fill purple" id="fillReverb"></div></div>
-      <div class="auto-val" id="valReverb">—</div>
-    </div>
-    <div class="auto-row">
       <div class="auto-label">PUMP</div>
-      <div class="auto-track"><div class="auto-fill orange" id="fillPump"></div></div>
+      <div class="auto-track"><div class="auto-fill" id="fillPump"></div></div>
       <div class="auto-val" id="valPump">—</div>
-    </div>
-    <div class="auto-row">
-      <div class="auto-label">DETUNE</div>
-      <div class="auto-track"><div class="auto-fill cyan" id="fillDetune"></div></div>
-      <div class="auto-val" id="valDetune">—</div>
     </div>
   </div>
 
@@ -382,112 +785,164 @@ input[type=range]::-webkit-slider-thumb {
 
   <!-- Transport + Tension -->
   <div class="controls">
-    <button class="btn" id="playBtn">PLAY</button>
-    <button class="tension-btn" id="tensionBtn">TENSION</button>
-    <button class="btn orange" id="clearBtn">CLEAR</button>
-
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:4px;">
-      <button class="tag-btn" data-pattern="tron">TRON</button>
-      <button class="tag-btn" data-pattern="daft">DAFT</button>
-      <button class="tag-btn" data-pattern="derezzed">DEREZZED</button>
-      <button class="tag-btn" data-pattern="random">RANDOM</button>
-    </div>
-  </div>
-
-  <!-- Knob panels -->
-  <div class="panels-row">
-    <div class="knob-panel">
-      <div class="knob-panel-title">RHYTHM</div>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <label>BPM</label>
-          <input type="range" id="bpmSlider" min="60" max="180" value="120">
-          <span class="knob-val" id="bpmVal">120</span>
-        </div>
-        <div class="knob-wrap">
-          <label>PUMP</label>
-          <input type="range" id="pumpSlider" min="0" max="0.9" value="0.65" step="0.01">
-          <span class="knob-val" id="pumpVal">0.65</span>
-        </div>
-        <div class="knob-wrap">
-          <label>BPM DRIFT</label>
-          <input type="range" id="driftSlider" min="0" max="8" value="2" step="0.5">
-          <span class="knob-val" id="driftVal">2</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="knob-panel">
-      <div class="knob-panel-title">FILTER + SPACE</div>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <label>CUTOFF</label>
-          <input type="range" id="cutoffSlider" min="100" max="12000" value="300">
-          <span class="knob-val" id="cutoffVal">300</span>
-        </div>
-        <div class="knob-wrap">
-          <label>RESONANCE</label>
-          <input type="range" id="resSlider" min="0.5" max="18" value="5" step="0.1">
-          <span class="knob-val" id="resVal">5.0</span>
-        </div>
-        <div class="knob-wrap">
-          <label>REVERB</label>
-          <input type="range" id="reverbSlider" min="0" max="1" value="0.45" step="0.01">
-          <span class="knob-val" id="reverbVal">0.45</span>
-        </div>
-        <div class="knob-wrap">
-          <label>DETUNE</label>
-          <input type="range" id="detuneSlider" min="0" max="35" value="8">
-          <span class="knob-val" id="detuneVal">8</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="knob-panel">
-      <div class="knob-panel-title">DRAMA + CHORDS</div>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <label>DRAMA</label>
-          <input type="range" id="dramaSlider" min="1" max="10" value="5" step="1">
-          <span class="knob-val" id="dramaVal">5</span>
-        </div>
-        <div class="knob-wrap">
-          <label>CHORD VOL</label>
-          <input type="range" id="chordVolSlider" min="0" max="0.8" value="0.3" step="0.01">
-          <span class="knob-val" id="chordVolVal">0.30</span>
-        </div>
-        <div class="knob-wrap">
-          <label>CHORD SUSTAIN</label>
-          <input type="range" id="chordSusSlider" min="0.5" max="6" value="3" step="0.1">
-          <span class="knob-val" id="chordSusVal">3.0</span>
-        </div>
-        <div class="knob-wrap">
-          <label>PAD VOL</label>
-          <input type="range" id="padVolSlider" min="0" max="0.5" value="0.18" step="0.01">
-          <span class="knob-val" id="padVolVal">0.18</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Evolution toggles -->
-  <div class="evo-row">
-    <span class="evo-label">AUTO</span>
-    <button class="tag-btn active" id="btnMutate"     data-toggle="mutateEnabled">MUTATE</button>
-    <button class="tag-btn active" id="btnSweep"      data-toggle="sweepEnabled">FILTER SWEEP</button>
-    <button class="tag-btn active ot" id="btnPumpAuto"   data-toggle="pumpAutoEnabled">PUMP AUTO</button>
-    <button class="tag-btn active" id="btnDetuneAuto" data-toggle="detuneAutoEnabled">DETUNE DRIFT</button>
-    <button class="tag-btn active" id="btnReverbAuto" data-toggle="reverbAutoEnabled">REVERB SWELL</button>
-    <button class="tag-btn active ot" id="btnChords"     data-toggle="chordsEnabled">CHORD BLASTS</button>
-    <button class="tag-btn active pt" id="btnPads"       data-toggle="padsEnabled">PADS</button>
-    <button class="tag-btn active" id="btnArpRumble"  data-toggle="arpRumbleEnabled">ARP RUMBLE</button>
-    <button class="tag-btn active" id="btnBpmDrift"   data-toggle="bpmDriftEnabled">BPM DRIFT</button>
+    <button class="btn-primary" id="playBtn">PLAY</button>
+    <button class="btn-primary warn" id="tensionBtn">TENSION</button>
+    <button class="btn-secondary" id="patternTrigger" aria-haspopup="true">
+      <span class="pattern-trigger-lbl">PATTERN</span>
+      <span class="pattern-trigger-val" id="patternTriggerVal">—</span>
+      <span class="pattern-trigger-chev">▾</span>
+    </button>
   </div>
 
   <div class="status-row">
     <div class="status" id="status">— PRESS PLAY —</div>
     <div class="event-log" id="eventLog"></div>
   </div>
+
+  <!-- Drawer handle (always visible at bottom of stage) -->
+  <button class="drawer-handle" id="drawerHandle" aria-controls="drawer" aria-expanded="false">
+    <span class="drawer-handle-icon">≡</span>
+    <span class="drawer-handle-label">CONTROLS</span>
+  </button>
+
+  <!-- Drawer (controls tucked away) -->
+  <section class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-tabs" role="tablist">
+      <button class="btn-secondary drawer-tab active" data-tab="mix" role="tab" aria-selected="true">
+        MIX
+      </button>
+      <button class="btn-secondary drawer-tab" data-tab="auto" role="tab" aria-selected="false">
+        AUTO
+      </button>
+      <button class="btn-secondary drawer-tab" data-tab="patterns" role="tab" aria-selected="false">
+        PATTERNS
+      </button>
+      <button class="drawer-close" id="drawerClose" aria-label="Close controls drawer">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-pane active" data-pane="mix" role="tabpanel">
+  <div class="slider-grid">
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">BPM</span><span class="val" id="bpmVal">120</span></div>
+      <input type="range" class="slider" id="bpmSlider" min="60" max="180" value="120" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">PUMP</span><span class="val" id="pumpVal">0.65</span></div>
+      <input type="range" class="slider" id="pumpSlider" min="0" max="0.9" value="0.65" step="0.01" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">BPM DRIFT</span><span class="val" id="driftVal">2</span></div>
+      <input type="range" class="slider" id="driftSlider" min="0" max="8" value="2" step="0.5" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">CUTOFF</span><span class="val" id="cutoffVal">300</span></div>
+      <input type="range" class="slider" id="cutoffSlider" min="100" max="12000" value="300" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">RESONANCE</span><span class="val" id="resVal">5.0</span></div>
+      <input type="range" class="slider" id="resSlider" min="0.5" max="18" value="5" step="0.1" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head">
+        <span class="lbl">REVERB</span>
+        <span class="auto-meter" aria-hidden="true">
+          <span class="auto-meter-fill" id="fillReverb"></span>
+          <span class="auto-meter-val" id="valReverb"></span>
+        </span>
+        <span class="val" id="reverbVal">0.45</span>
+      </div>
+      <input type="range" class="slider" id="reverbSlider" min="0" max="1" value="0.45" step="0.01" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head">
+        <span class="lbl">DETUNE</span>
+        <span class="auto-meter" aria-hidden="true">
+          <span class="auto-meter-fill" id="fillDetune"></span>
+          <span class="auto-meter-val" id="valDetune"></span>
+        </span>
+        <span class="val" id="detuneVal">8</span>
+      </div>
+      <input type="range" class="slider" id="detuneSlider" min="0" max="35" value="8" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">DRAMA</span><span class="val" id="dramaVal">5</span></div>
+      <input type="range" class="slider" id="dramaSlider" min="1" max="10" value="5" step="1" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">CHORD VOL</span><span class="val" id="chordVolVal">0.30</span></div>
+      <input type="range" class="slider" id="chordVolSlider" min="0" max="0.8" value="0.3" step="0.01" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">CHORD SUSTAIN</span><span class="val" id="chordSusVal">3.0</span></div>
+      <input type="range" class="slider" id="chordSusSlider" min="0.5" max="6" value="3" step="0.1" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">PAD VOL</span><span class="val" id="padVolVal">0.18</span></div>
+      <input type="range" class="slider" id="padVolSlider" min="0" max="0.5" value="0.18" step="0.01" />
+    </div>
+  </div>
+</div>
+      <div class="drawer-pane" data-pane="auto" role="tabpanel">
+  <div class="toggle-grid">
+    <label class="toggle-row">
+      <span class="toggle"><input type="checkbox" data-toggle="mutateEnabled" checked role="switch" />
+        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
+      <span class="toggle-label">MUTATE</span>
+    </label>
+    <label class="toggle-row">
+      <span class="toggle"><input type="checkbox" data-toggle="sweepEnabled" checked role="switch" />
+        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
+      <span class="toggle-label">FILTER SWEEP</span>
+    </label>
+    <label class="toggle-row">
+      <span class="toggle"><input type="checkbox" data-toggle="pumpAutoEnabled" checked role="switch" />
+        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
+      <span class="toggle-label">PUMP AUTO</span>
+    </label>
+    <label class="toggle-row">
+      <span class="toggle"><input type="checkbox" data-toggle="detuneAutoEnabled" checked role="switch" />
+        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
+      <span class="toggle-label">DETUNE DRIFT</span>
+    </label>
+    <label class="toggle-row">
+      <span class="toggle"><input type="checkbox" data-toggle="reverbAutoEnabled" checked role="switch" />
+        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
+      <span class="toggle-label">REVERB SWELL</span>
+    </label>
+    <label class="toggle-row">
+      <span class="toggle"><input type="checkbox" data-toggle="chordsEnabled" checked role="switch" />
+        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
+      <span class="toggle-label">CHORD BLASTS</span>
+    </label>
+    <label class="toggle-row">
+      <span class="toggle"><input type="checkbox" data-toggle="padsEnabled" checked role="switch" />
+        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
+      <span class="toggle-label">PADS</span>
+    </label>
+    <label class="toggle-row">
+      <span class="toggle"><input type="checkbox" data-toggle="arpRumbleEnabled" checked role="switch" />
+        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
+      <span class="toggle-label">ARP RUMBLE</span>
+    </label>
+    <label class="toggle-row">
+      <span class="toggle"><input type="checkbox" data-toggle="bpmDriftEnabled" checked role="switch" />
+        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
+      <span class="toggle-label">BPM DRIFT</span>
+    </label>
+  </div>
+</div>
+      <div class="drawer-pane" data-pane="patterns" role="tabpanel">
+  <div class="pattern-grid">
+    <button class="btn-primary pattern-pick" data-pattern="tron">TRON</button>
+    <button class="btn-primary pattern-pick" data-pattern="daft">DAFT</button>
+    <button class="btn-primary pattern-pick" data-pattern="derezzed">DEREZZED</button>
+    <button class="btn-primary pattern-pick" data-pattern="random">RANDOM</button>
+  </div>
+  <hr class="pattern-divider" />
+  <button class="btn-secondary danger" id="clearBtn">✕ CLEAR GRID</button>
+</div>
+    </div>
+  </section>
 
 </div>
 
