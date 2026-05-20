@@ -4,7 +4,7 @@
 
 /* global self, caches, fetch */
 
-const CACHE_VERSION = "darth-punt-v1";
+const CACHE_VERSION = "darth-punt-v2";
 const PRECACHE = [
   "./",
   "./dist/main.js",
