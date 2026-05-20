@@ -1,0 +1,25 @@
+{
+  "tasks": {
+    "check": "deno fmt --check && deno lint --permit-no-files && deno check scripts/**/*.ts src/**/*.ts",
+    "build": "deno run -A scripts/build.ts",
+    "dev": "deno run -A scripts/dev.ts",
+    "icons": "deno run -A scripts/generate-icons.ts",
+    "fix": "deno fmt && deno lint --fix"
+  },
+  "fmt": {
+    "indentWidth": 2,
+    "singleQuote": false,
+    "lineWidth": 100,
+    "exclude": ["index.html", "CLAUDE.md", "sw.js", "manifest.json", "dist/", "icons/"]
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    },
+    "exclude": ["sw.js", "dist/"]
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["dom", "dom.iterable", "deno.ns", "es2023"]
+  }
+}

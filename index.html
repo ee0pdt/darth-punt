@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DARTH PUNT</title>
+<meta name="description" content="DARTH PUNT — cinematic generative sequencer in the browser.">
+<meta name="theme-color" content="#010608">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+:root {
+  --cyan: #00f5ff;
+  --orange: #ff6b00;
+  --purple: #9b59ff;
+  --dark: #010608;
+  --panel: #040d18;
+  --glow-cyan: 0 0 8px #00f5ff, 0 0 24px #00f5ff33;
+  --glow-orange: 0 0 8px #ff6b00, 0 0 24px #ff6b0033;
+  --glow-purple: 0 0 8px #9b59ff, 0 0 24px #9b59ff33;
+  --glow-dim: 0 0 4px #00f5ff44;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--dark);
+  color: var(--cyan);
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 20px 0 40px;
+  overflow-x: hidden;
+  position: relative;
+}
+
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(0,245,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events:none; z-index:0;
+}
+
+/* Scan line */
+.scanline {
+  position:fixed; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: scan 5s linear infinite;
+  opacity:0.15; pointer-events:none; z-index:100;
+}
+@keyframes scan { 0%{top:0} 100%{top:100vh} }
+
+/* Tension overlay */
+.tension-overlay {
+  position:fixed; inset:0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(155,89,255,0.15) 100%);
+  opacity:0; pointer-events:none; z-index:5;
+  transition: opacity 1s ease;
+}
+.tension-overlay.active { opacity:1; }
+
+.container {
+  position:relative; z-index:10;
+  width: min(1020px, 96vw);
+  display:flex; flex-direction:column; gap:14px;
+}
+
+/* Header */
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding-bottom:12px;
+  border-bottom:1px solid rgba(0,245,255,0.12);
+}
+
+.logo {
+  display:flex; flex-direction:column; gap:2px;
+}
+
+h1 {
+  font-family:'Orbitron',sans-serif; font-weight:900;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  letter-spacing:0.25em;
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  filter: drop-shadow(0 0 12px rgba(0,245,255,0.4));
+}
+
+.subtitle {
+  font-size:0.5rem; letter-spacing:0.4em;
+  color:rgba(0,245,255,0.35);
+}
+
+.header-readouts {
+  display:flex; gap:20px; align-items:center; flex-wrap:wrap;
+}
+
+.readout {
+  font-family:'Orbitron',sans-serif;
+  font-size:0.65rem; letter-spacing:0.15em;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+}
+.readout .val { font-size:1rem; font-weight:700; }
+.readout .lbl { font-size:0.45rem; opacity:0.5; }
+.readout.cyan .val  { color:var(--cyan);   text-shadow:var(--glow-cyan); }
+.readout.orange .val{ color:var(--orange); text-shadow:var(--glow-orange); }
+.readout.purple .val{ color:var(--purple); text-shadow:var(--glow-purple); }
+
+/* Visualiser */
+.viz-wrap {
+  height:90px;
+  background:var(--panel);
+  border:1px solid rgba(0,245,255,0.08);
+  position:relative; overflow:hidden;
+}
+canvas#viz { width:100%; height:100%; display:block; }
+
+.chord-flash {
+  position:absolute; inset:0;
+  background:rgba(155,89,255,0.2);
+  opacity:0; pointer-events:none;
+}
+.chord-flash.active { opacity:1; transition:none; }
+.chord-flash.fade   { opacity:0; transition:opacity 0.6s ease; }
+
+/* Automation bars */
+.auto-bars {
+  display:flex; flex-direction:column; gap:5px;
+}
+
+.auto-row {
+  display:flex; align-items:center; gap:8px;
+}
+
+.auto-label {
+  width:70px; font-size:0.5rem; letter-spacing:0.12em;
+  color:rgba(0,245,255,0.35); text-align:right; flex-shrink:0;
+}
+
+.auto-track {
+  flex:1; height:3px;
+  background:rgba(0,245,255,0.06);
+  position:relative;
+}
+
+.auto-fill {
+  height:100%; width:0%;
+  transition: width 0.4s linear;
+}
+
+.auto-fill.cyan   { background:linear-gradient(90deg,#00f5ff11,var(--cyan)); box-shadow:var(--glow-dim); }
+.auto-fill.orange { background:linear-gradient(90deg,#ff6b0011,var(--orange)); box-shadow:0 0 4px #ff6b0055; }
+.auto-fill.purple { background:linear-gradient(90deg,#9b59ff11,var(--purple)); box-shadow:0 0 4px #9b59ff55; }
+
+.auto-val {
+  width:42px; font-size:0.5rem;
+  color:rgba(0,245,255,0.5); text-align:left; flex-shrink:0;
+}
+
+/* Sequencer */
+.sequencer { display:flex; flex-direction:column; gap:4px; }
+
+.track { display:flex; align-items:center; gap:6px; }
+
+.track-left {
+  display:flex; align-items:center; gap:4px; width:80px; flex-shrink:0;
+}
+
+.mute-btn {
+  width:14px; height:14px;
+  border:1px solid rgba(0,245,255,0.2);
+  background:transparent; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all 0.1s;
+}
+.mute-btn:hover { border-color:var(--orange); }
+.mute-btn.muted { background:rgba(255,107,0,0.2); border-color:var(--orange); }
+.mute-btn::after { content:''; width:6px; height:1px; background:currentColor; }
+
+.track-label {
+  font-size:0.5rem; letter-spacing:0.1em;
+  color:rgba(0,245,255,0.4); text-align:right; flex:1;
+}
+.track-label.orange { color:rgba(255,107,0,0.45); }
+.track-label.purple { color:rgba(155,89,255,0.45); }
+
+.steps {
+  display:grid; grid-template-columns:repeat(16,1fr);
+  gap:3px; flex:1;
+}
+
+.step {
+  aspect-ratio:1;
+  border:1px solid rgba(0,245,255,0.08);
+  background:var(--panel);
+  cursor:pointer;
+  transition:background 0.06s, box-shadow 0.06s;
+}
+
+.step.on              { background:rgba(0,245,255,0.16); border-color:rgba(0,245,255,0.4); }
+.step.on.beat-orange  { background:rgba(255,107,0,0.16); border-color:rgba(255,107,0,0.4); }
+.step.on.beat-purple  { background:rgba(155,89,255,0.16); border-color:rgba(155,89,255,0.4); }
+.step.active          { background:var(--cyan)!important;   border-color:var(--cyan)!important;   box-shadow:var(--glow-cyan)!important; }
+.step.active.beat-orange { background:var(--orange)!important; border-color:var(--orange)!important; box-shadow:var(--glow-orange)!important; }
+.step.active.beat-purple { background:var(--purple)!important; border-color:var(--purple)!important; box-shadow:var(--glow-purple)!important; }
+.steps .step:nth-child(4n+1) { border-left-color:rgba(0,245,255,0.2); }
+
+/* Controls row */
+.controls {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+}
+
+.btn {
+  font-family:'Orbitron',sans-serif;
+  font-size:0.6rem; letter-spacing:0.18em;
+  padding:9px 18px;
+  border:1px solid var(--cyan);
+  background:transparent; color:var(--cyan);
+  cursor:pointer; transition:all 0.12s;
+  white-space:nowrap;
+}
+.btn:hover          { background:rgba(0,245,255,0.08); box-shadow:var(--glow-cyan); }
+.btn.active         { background:var(--cyan); color:var(--dark); box-shadow:var(--glow-cyan); }
+.btn.orange         { border-color:var(--orange); color:var(--orange); }
+.btn.orange:hover   { background:rgba(255,107,0,0.08); box-shadow:var(--glow-orange); }
+.btn.orange.active  { background:var(--orange); color:var(--dark); }
+.btn.purple         { border-color:var(--purple); color:var(--purple); }
+.btn.purple:hover   { background:rgba(155,89,255,0.08); box-shadow:var(--glow-purple); }
+.btn.purple.active  { background:var(--purple); color:var(--dark); }
+
+/* Knob panels */
+.knob-panel {
+  display:flex; flex-direction:column; gap:8px;
+  background:var(--panel);
+  border:1px solid rgba(0,245,255,0.08);
+  padding:10px 14px;
+}
+
+.knob-panel-title {
+  font-size:0.48rem; letter-spacing:0.2em;
+  color:rgba(0,245,255,0.3);
+  border-bottom:1px solid rgba(0,245,255,0.08);
+  padding-bottom:5px; margin-bottom:2px;
+}
+
+.knob-row { display:flex; gap:16px; flex-wrap:wrap; }
+
+.knob-wrap {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+.knob-wrap label { font-size:0.46rem; letter-spacing:0.1em; color:rgba(0,245,255,0.45); }
+
+input[type=range] {
+  -webkit-appearance:none; width:68px; height:2px;
+  background:rgba(0,245,255,0.12); outline:none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:8px; height:8px;
+  background:var(--cyan); box-shadow:var(--glow-cyan); cursor:pointer;
+}
+.knob-val { font-size:0.46rem; color:rgba(0,245,255,0.55); }
+
+/* Two column layout for knobs */
+.panels-row { display:flex; gap:10px; flex-wrap:wrap; }
+.panels-row .knob-panel { flex:1; min-width:200px; }
+
+/* Evolution row */
+.evo-row {
+  display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+}
+.evo-label { font-size:0.5rem; letter-spacing:0.14em; color:rgba(0,245,255,0.3); margin-right:4px; }
+
+.tag-btn {
+  font-family:'Share Tech Mono',monospace;
+  font-size:0.54rem; letter-spacing:0.08em;
+  padding:4px 9px;
+  border:1px solid rgba(0,245,255,0.18);
+  background:transparent; color:rgba(0,245,255,0.4);
+  cursor:pointer; transition:all 0.1s;
+}
+.tag-btn:hover,.tag-btn.active { border-color:var(--cyan); color:var(--cyan); box-shadow:var(--glow-dim); }
+.tag-btn.ot { border-color:rgba(255,107,0,0.18); color:rgba(255,107,0,0.4); }
+.tag-btn.ot:hover,.tag-btn.ot.active { border-color:var(--orange); color:var(--orange); }
+.tag-btn.pt { border-color:rgba(155,89,255,0.18); color:rgba(155,89,255,0.4); }
+.tag-btn.pt:hover,.tag-btn.pt.active { border-color:var(--purple); color:var(--purple); }
+
+/* Status */
+.status-row { display:flex; justify-content:space-between; align-items:center; }
+.status { font-size:0.55rem; letter-spacing:0.18em; color:rgba(0,245,255,0.25); }
+.status.playing { color:var(--cyan); animation:pulse 1.4s ease-in-out infinite; }
+.event-log { font-size:0.52rem; letter-spacing:0.12em; color:var(--purple); text-shadow:var(--glow-purple); opacity:0; transition:opacity 0.25s; }
+.event-log.show { opacity:1; }
+@keyframes pulse { 0%,100%{opacity:0.35} 50%{opacity:1} }
+
+/* Tension button special */
+.tension-btn {
+  font-family:'Orbitron',sans-serif;
+  font-size:0.6rem; letter-spacing:0.18em;
+  padding:9px 18px;
+  border:1px solid var(--purple);
+  background:transparent; color:var(--purple);
+  cursor:pointer; transition:all 0.12s;
+  animation: tensionPulse 2s ease-in-out infinite;
+}
+@keyframes tensionPulse { 0%,100%{box-shadow:none} 50%{box-shadow:var(--glow-purple)} }
+.tension-btn:hover { background:rgba(155,89,255,0.15); box-shadow:var(--glow-purple); }
+.tension-btn.releasing {
+  background:var(--purple); color:var(--dark);
+  box-shadow:var(--glow-purple);
+  animation:none;
+}
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+<div class="tension-overlay" id="tensionOverlay"></div>
+
+<div class="container">
+
+  <header>
+    <div class="logo">
+      <h1>DARTH PUNT</h1>
+      <div class="subtitle">CINEMATIC GENERATIVE SEQUENCER</div>
+    </div>
+    <div class="header-readouts">
+      <div class="readout cyan">
+        <div class="val" id="barVal">—</div>
+        <div class="lbl">BAR</div>
+      </div>
+      <div class="readout orange">
+        <div class="val" id="bpmReadout">120</div>
+        <div class="lbl">BPM</div>
+      </div>
+      <div class="readout purple">
+        <div class="val" id="dramaReadout">5</div>
+        <div class="lbl">DRAMA</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Visualiser -->
+  <div class="viz-wrap">
+    <canvas id="viz"></canvas>
+    <div class="chord-flash" id="chordFlash"></div>
+  </div>
+
+  <!-- Automation bars -->
+  <div class="auto-bars">
+    <div class="auto-row">
+      <div class="auto-label">FILTER</div>
+      <div class="auto-track"><div class="auto-fill cyan" id="fillFilter"></div></div>
+      <div class="auto-val" id="valFilter">—</div>
+    </div>
+    <div class="auto-row">
+      <div class="auto-label">REVERB</div>
+      <div class="auto-track"><div class="auto-fill purple" id="fillReverb"></div></div>
+      <div class="auto-val" id="valReverb">—</div>
+    </div>
+    <div class="auto-row">
+      <div class="auto-label">PUMP</div>
+      <div class="auto-track"><div class="auto-fill orange" id="fillPump"></div></div>
+      <div class="auto-val" id="valPump">—</div>
+    </div>
+    <div class="auto-row">
+      <div class="auto-label">DETUNE</div>
+      <div class="auto-track"><div class="auto-fill cyan" id="fillDetune"></div></div>
+      <div class="auto-val" id="valDetune">—</div>
+    </div>
+  </div>
+
+  <!-- Sequencer -->
+  <div class="sequencer" id="sequencer"></div>
+
+  <!-- Transport + Tension -->
+  <div class="controls">
+    <button class="btn" id="playBtn">PLAY</button>
+    <button class="tension-btn" id="tensionBtn">TENSION</button>
+    <button class="btn orange" id="clearBtn">CLEAR</button>
+
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:4px;">
+      <button class="tag-btn" data-pattern="tron">TRON</button>
+      <button class="tag-btn" data-pattern="daft">DAFT</button>
+      <button class="tag-btn" data-pattern="derezzed">DEREZZED</button>
+      <button class="tag-btn" data-pattern="random">RANDOM</button>
+    </div>
+  </div>
+
+  <!-- Knob panels -->
+  <div class="panels-row">
+    <div class="knob-panel">
+      <div class="knob-panel-title">RHYTHM</div>
+      <div class="knob-row">
+        <div class="knob-wrap">
+          <label>BPM</label>
+          <input type="range" id="bpmSlider" min="60" max="180" value="120">
+          <span class="knob-val" id="bpmVal">120</span>
+        </div>
+        <div class="knob-wrap">
+          <label>PUMP</label>
+          <input type="range" id="pumpSlider" min="0" max="0.9" value="0.65" step="0.01">
+          <span class="knob-val" id="pumpVal">0.65</span>
+        </div>
+        <div class="knob-wrap">
+          <label>BPM DRIFT</label>
+          <input type="range" id="driftSlider" min="0" max="8" value="2" step="0.5">
+          <span class="knob-val" id="driftVal">2</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="knob-panel">
+      <div class="knob-panel-title">FILTER + SPACE</div>
+      <div class="knob-row">
+        <div class="knob-wrap">
+          <label>CUTOFF</label>
+          <input type="range" id="cutoffSlider" min="100" max="12000" value="300">
+          <span class="knob-val" id="cutoffVal">300</span>
+        </div>
+        <div class="knob-wrap">
+          <label>RESONANCE</label>
+          <input type="range" id="resSlider" min="0.5" max="18" value="5" step="0.1">
+          <span class="knob-val" id="resVal">5.0</span>
+        </div>
+        <div class="knob-wrap">
+          <label>REVERB</label>
+          <input type="range" id="reverbSlider" min="0" max="1" value="0.45" step="0.01">
+          <span class="knob-val" id="reverbVal">0.45</span>
+        </div>
+        <div class="knob-wrap">
+          <label>DETUNE</label>
+          <input type="range" id="detuneSlider" min="0" max="35" value="8">
+          <span class="knob-val" id="detuneVal">8</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="knob-panel">
+      <div class="knob-panel-title">DRAMA + CHORDS</div>
+      <div class="knob-row">
+        <div class="knob-wrap">
+          <label>DRAMA</label>
+          <input type="range" id="dramaSlider" min="1" max="10" value="5" step="1">
+          <span class="knob-val" id="dramaVal">5</span>
+        </div>
+        <div class="knob-wrap">
+          <label>CHORD VOL</label>
+          <input type="range" id="chordVolSlider" min="0" max="0.8" value="0.3" step="0.01">
+          <span class="knob-val" id="chordVolVal">0.30</span>
+        </div>
+        <div class="knob-wrap">
+          <label>CHORD SUSTAIN</label>
+          <input type="range" id="chordSusSlider" min="0.5" max="6" value="3" step="0.1">
+          <span class="knob-val" id="chordSusVal">3.0</span>
+        </div>
+        <div class="knob-wrap">
+          <label>PAD VOL</label>
+          <input type="range" id="padVolSlider" min="0" max="0.5" value="0.18" step="0.01">
+          <span class="knob-val" id="padVolVal">0.18</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Evolution toggles -->
+  <div class="evo-row">
+    <span class="evo-label">AUTO</span>
+    <button class="tag-btn active" id="btnMutate"     data-toggle="mutateEnabled">MUTATE</button>
+    <button class="tag-btn active" id="btnSweep"      data-toggle="sweepEnabled">FILTER SWEEP</button>
+    <button class="tag-btn active ot" id="btnPumpAuto"   data-toggle="pumpAutoEnabled">PUMP AUTO</button>
+    <button class="tag-btn active" id="btnDetuneAuto" data-toggle="detuneAutoEnabled">DETUNE DRIFT</button>
+    <button class="tag-btn active" id="btnReverbAuto" data-toggle="reverbAutoEnabled">REVERB SWELL</button>
+    <button class="tag-btn active ot" id="btnChords"     data-toggle="chordsEnabled">CHORD BLASTS</button>
+    <button class="tag-btn active pt" id="btnPads"       data-toggle="padsEnabled">PADS</button>
+    <button class="tag-btn active" id="btnArpRumble"  data-toggle="arpRumbleEnabled">ARP RUMBLE</button>
+    <button class="tag-btn active" id="btnBpmDrift"   data-toggle="bpmDriftEnabled">BPM DRIFT</button>
+  </div>
+
+  <div class="status-row">
+    <div class="status" id="status">— PRESS PLAY —</div>
+    <div class="event-log" id="eventLog"></div>
+  </div>
+
+</div>
+
+<script type="module" src="./dist/main.js"></script>
+
+</body>
+</html>
