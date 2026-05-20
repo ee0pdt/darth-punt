@@ -372,6 +372,80 @@ input[type=range]::-webkit-slider-thumb {
   box-shadow: var(--glow-warn);
   animation: none;
 }
+
+/* Drawer handle */
+.drawer-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 32px;
+  border: none;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+}
+.drawer-handle:hover {
+  color: var(--cyan);
+  background: rgba(92, 211, 255, 0.04);
+}
+.drawer-handle-icon {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* Drawer body */
+.drawer {
+  width: 100%;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 240ms ease-out;
+}
+.drawer.open {
+  max-height: 360px;
+}
+
+.drawer-tabs {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.drawer-close {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--cyan-low);
+  color: var(--cyan-dim);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: color 0.1s, border-color 0.1s;
+}
+.drawer-close:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.drawer-body {
+  padding: 14px;
+}
+.drawer-pane {
+  display: none;
+}
+.drawer-pane.active {
+  display: block;
+}
 </style>
 </head>
 <body>
@@ -536,6 +610,33 @@ input[type=range]::-webkit-slider-thumb {
     <div class="status" id="status">— PRESS PLAY —</div>
     <div class="event-log" id="eventLog"></div>
   </div>
+
+  <!-- Drawer handle (always visible at bottom of stage) -->
+  <button class="drawer-handle" id="drawerHandle" aria-controls="drawer" aria-expanded="false">
+    <span class="drawer-handle-icon">≡</span>
+    <span class="drawer-handle-label">CONTROLS</span>
+  </button>
+
+  <!-- Drawer (controls tucked away) -->
+  <section class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-tabs" role="tablist">
+      <button class="btn-secondary drawer-tab active" data-tab="mix" role="tab" aria-selected="true">
+        MIX
+      </button>
+      <button class="btn-secondary drawer-tab" data-tab="auto" role="tab" aria-selected="false">
+        AUTO
+      </button>
+      <button class="btn-secondary drawer-tab" data-tab="patterns" role="tab" aria-selected="false">
+        PATTERNS
+      </button>
+      <button class="drawer-close" id="drawerClose" aria-label="Close controls drawer">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-pane active" data-pane="mix" role="tabpanel"></div>
+      <div class="drawer-pane" data-pane="auto" role="tabpanel"></div>
+      <div class="drawer-pane" data-pane="patterns" role="tabpanel"></div>
+    </div>
+  </section>
 
 </div>
 

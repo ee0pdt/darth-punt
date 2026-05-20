@@ -11,6 +11,7 @@ import { isSchedulerRunning, startScheduler, stopScheduler } from "./audio/sched
 import { triggerChordBlast } from "./audio/synthesis.ts";
 import { mountSequencer, renderGrid } from "./ui/sequencer.ts";
 import { loadPattern, mountControls } from "./ui/controls.ts";
+import { mountDrawer } from "./ui/drawer.ts";
 import { setTensionButton, setTensionOverlay, showEvent } from "./ui/events.ts";
 import { mountVisualiser, startVisualiser } from "./visual/visualiser.ts";
 import { registerServiceWorker } from "./pwa.ts";
@@ -97,6 +98,7 @@ registerServiceWorker();
 mountSequencer();
 mountVisualiser();
 mountControls({ onPlay: togglePlay, onTension: triggerTension });
+mountDrawer();
 
 loadPattern("tron");
 
