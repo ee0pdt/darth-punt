@@ -20,10 +20,15 @@ export function mountSequencer(): void {
     const mute = document.createElement("button");
     mute.type = "button";
     mute.className = "mute-btn";
-    mute.title = "Mute";
+    const setMuteAria = () => {
+      mute.setAttribute("aria-label", `${track.label} mute ${state.mutes[ti] ? "on" : "off"}`);
+      mute.setAttribute("aria-pressed", state.mutes[ti] ? "true" : "false");
+    };
+    setMuteAria();
     mute.addEventListener("click", () => {
       state.mutes[ti] = !state.mutes[ti];
       mute.classList.toggle("muted", state.mutes[ti]);
+      setMuteAria();
     });
 
     const lbl = document.createElement("div");

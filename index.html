@@ -591,6 +591,24 @@ input[type="range"].slider:focus-visible {
   box-shadow: var(--glow-warn);
 }
 
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.drawer-handle:focus-visible,
+.drawer-close:focus-visible,
+.mute-btn:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+.btn-primary.warn:focus-visible {
+  outline-color: var(--warn);
+}
+.step:focus-visible {
+  outline: 1px solid var(--cyan);
+  outline-offset: 1px;
+  z-index: 2;
+  position: relative;
+}
+
 @media (max-width: 720px) {
   body {
     padding: 12px 0 24px;
