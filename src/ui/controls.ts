@@ -38,14 +38,13 @@ export function mountControls(handlers: ControlHandlers): void {
     });
   });
 
-  // Evolution toggle buttons
-  document.querySelectorAll<HTMLElement>("[data-toggle]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.toggle;
+  // Evolution toggle switches
+  document.querySelectorAll<HTMLInputElement>("input[data-toggle]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const key = input.dataset.toggle;
       if (!key) return;
       const bag = state as unknown as Record<string, boolean>;
-      bag[key] = !bag[key];
-      btn.classList.toggle("active", bag[key]);
+      bag[key] = input.checked;
     });
   });
 
