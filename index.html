@@ -291,36 +291,73 @@ canvas#viz { width:100%; height:100%; display:block; }
   background: rgba(92, 211, 255, 0.06);
 }
 
-/* Knob panels */
-.knob-panel {
-  display:flex; flex-direction:column; gap:8px;
-  background:var(--surface);
-  border:1px solid var(--line);
-  padding:10px 14px;
+/* Slider rows — used in MIX drawer tab */
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+  min-height: 44px;
+  justify-content: center;
+}
+.slider-row .slider-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+}
+.slider-row .slider-head .lbl { color: var(--text-dim); }
+.slider-row .slider-head .val { color: var(--cyan); }
+
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    var(--cyan-low) 0%,
+    var(--cyan-low) var(--pct, 0%),
+    var(--surface-2) var(--pct, 0%),
+    var(--surface-2) 100%
+  );
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 4px;
+  height: 16px;
+  background: var(--cyan);
+  box-shadow: var(--glow-cyan);
+  cursor: pointer;
+  border: none;
+  border-radius: 0;
+}
+input[type="range"].slider::-moz-range-thumb {
+  width: 4px;
+  height: 16px;
+  background: var(--cyan);
+  box-shadow: var(--glow-cyan);
+  cursor: pointer;
+  border: none;
+  border-radius: 0;
+}
+input[type="range"].slider:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 4px;
 }
 
-.knob-panel-title { font-size: 0.6875rem; letter-spacing: 0.16em; color: var(--text-dim); border-bottom: 1px solid var(--line); padding-bottom: 5px; margin-bottom: 2px; }
-
-.knob-row { display:flex; gap:16px; flex-wrap:wrap; }
-
-.knob-wrap {
-  display:flex; flex-direction:column; align-items:center; gap:3px;
+.slider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 24px;
 }
-.knob-wrap label { font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--text-dim); }
-
-input[type=range] {
-  -webkit-appearance:none; width:68px; height:2px;
-  background:var(--surface-2); outline:none;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance:none; width:8px; height:8px;
-  background:var(--cyan); box-shadow:var(--glow-cyan); cursor:pointer;
-}
-.knob-val { font-size: 0.6875rem; color: var(--text-dim); }
-
-/* Two column layout for knobs */
-.panels-row { display:flex; gap:10px; flex-wrap:wrap; }
-.panels-row .knob-panel { flex:1; min-width:200px; }
 
 /* Toggle switch — iOS-class, Tron themed */
 .toggle-row {
@@ -568,82 +605,6 @@ input[type=range]::-webkit-slider-thumb {
     </div>
   </div>
 
-  <!-- Knob panels -->
-  <div class="panels-row">
-    <div class="knob-panel">
-      <div class="knob-panel-title">RHYTHM</div>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <label>BPM</label>
-          <input type="range" id="bpmSlider" min="60" max="180" value="120">
-          <span class="knob-val" id="bpmVal">120</span>
-        </div>
-        <div class="knob-wrap">
-          <label>PUMP</label>
-          <input type="range" id="pumpSlider" min="0" max="0.9" value="0.65" step="0.01">
-          <span class="knob-val" id="pumpVal">0.65</span>
-        </div>
-        <div class="knob-wrap">
-          <label>BPM DRIFT</label>
-          <input type="range" id="driftSlider" min="0" max="8" value="2" step="0.5">
-          <span class="knob-val" id="driftVal">2</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="knob-panel">
-      <div class="knob-panel-title">FILTER + SPACE</div>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <label>CUTOFF</label>
-          <input type="range" id="cutoffSlider" min="100" max="12000" value="300">
-          <span class="knob-val" id="cutoffVal">300</span>
-        </div>
-        <div class="knob-wrap">
-          <label>RESONANCE</label>
-          <input type="range" id="resSlider" min="0.5" max="18" value="5" step="0.1">
-          <span class="knob-val" id="resVal">5.0</span>
-        </div>
-        <div class="knob-wrap">
-          <label>REVERB</label>
-          <input type="range" id="reverbSlider" min="0" max="1" value="0.45" step="0.01">
-          <span class="knob-val" id="reverbVal">0.45</span>
-        </div>
-        <div class="knob-wrap">
-          <label>DETUNE</label>
-          <input type="range" id="detuneSlider" min="0" max="35" value="8">
-          <span class="knob-val" id="detuneVal">8</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="knob-panel">
-      <div class="knob-panel-title">DRAMA + CHORDS</div>
-      <div class="knob-row">
-        <div class="knob-wrap">
-          <label>DRAMA</label>
-          <input type="range" id="dramaSlider" min="1" max="10" value="5" step="1">
-          <span class="knob-val" id="dramaVal">5</span>
-        </div>
-        <div class="knob-wrap">
-          <label>CHORD VOL</label>
-          <input type="range" id="chordVolSlider" min="0" max="0.8" value="0.3" step="0.01">
-          <span class="knob-val" id="chordVolVal">0.30</span>
-        </div>
-        <div class="knob-wrap">
-          <label>CHORD SUSTAIN</label>
-          <input type="range" id="chordSusSlider" min="0.5" max="6" value="3" step="0.1">
-          <span class="knob-val" id="chordSusVal">3.0</span>
-        </div>
-        <div class="knob-wrap">
-          <label>PAD VOL</label>
-          <input type="range" id="padVolSlider" min="0" max="0.5" value="0.18" step="0.01">
-          <span class="knob-val" id="padVolVal">0.18</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="status-row">
     <div class="status" id="status">— PRESS PLAY —</div>
     <div class="event-log" id="eventLog"></div>
@@ -670,7 +631,54 @@ input[type=range]::-webkit-slider-thumb {
       <button class="drawer-close" id="drawerClose" aria-label="Close controls drawer">✕</button>
     </div>
     <div class="drawer-body">
-      <div class="drawer-pane active" data-pane="mix" role="tabpanel"></div>
+      <div class="drawer-pane active" data-pane="mix" role="tabpanel">
+  <div class="slider-grid">
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">BPM</span><span class="val" id="bpmVal">120</span></div>
+      <input type="range" class="slider" id="bpmSlider" min="60" max="180" value="120" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">PUMP</span><span class="val" id="pumpVal">0.65</span></div>
+      <input type="range" class="slider" id="pumpSlider" min="0" max="0.9" value="0.65" step="0.01" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">BPM DRIFT</span><span class="val" id="driftVal">2</span></div>
+      <input type="range" class="slider" id="driftSlider" min="0" max="8" value="2" step="0.5" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">CUTOFF</span><span class="val" id="cutoffVal">300</span></div>
+      <input type="range" class="slider" id="cutoffSlider" min="100" max="12000" value="300" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">RESONANCE</span><span class="val" id="resVal">5.0</span></div>
+      <input type="range" class="slider" id="resSlider" min="0.5" max="18" value="5" step="0.1" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">REVERB</span><span class="val" id="reverbVal">0.45</span></div>
+      <input type="range" class="slider" id="reverbSlider" min="0" max="1" value="0.45" step="0.01" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">DETUNE</span><span class="val" id="detuneVal">8</span></div>
+      <input type="range" class="slider" id="detuneSlider" min="0" max="35" value="8" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">DRAMA</span><span class="val" id="dramaVal">5</span></div>
+      <input type="range" class="slider" id="dramaSlider" min="1" max="10" value="5" step="1" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">CHORD VOL</span><span class="val" id="chordVolVal">0.30</span></div>
+      <input type="range" class="slider" id="chordVolSlider" min="0" max="0.8" value="0.3" step="0.01" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">CHORD SUSTAIN</span><span class="val" id="chordSusVal">3.0</span></div>
+      <input type="range" class="slider" id="chordSusSlider" min="0.5" max="6" value="3" step="0.1" />
+    </div>
+    <div class="slider-row">
+      <div class="slider-head"><span class="lbl">PAD VOL</span><span class="val" id="padVolVal">0.18</span></div>
+      <input type="range" class="slider" id="padVolSlider" min="0" max="0.5" value="0.18" step="0.01" />
+    </div>
+  </div>
+</div>
       <div class="drawer-pane" data-pane="auto" role="tabpanel">
   <div class="toggle-grid">
     <label class="toggle-row">

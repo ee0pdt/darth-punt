@@ -25,6 +25,14 @@ interface KnobBinding {
   onChange: (v: number) => void;
 }
 
+function updateSliderFill(slider: HTMLInputElement): void {
+  const min = parseFloat(slider.min || "0");
+  const max = parseFloat(slider.max || "100");
+  const v = parseFloat(slider.value);
+  const pct = max > min ? ((v - min) / (max - min)) * 100 : 0;
+  slider.style.setProperty("--pct", `${pct}%`);
+}
+
 export function mountControls(handlers: ControlHandlers): void {
   document.getElementById("playBtn")?.addEventListener("click", handlers.onPlay);
   document.getElementById("tensionBtn")?.addEventListener("click", handlers.onTension);
@@ -156,10 +164,12 @@ export function mountControls(handlers: ControlHandlers): void {
     const slider = document.getElementById(k.id);
     if (!(slider instanceof HTMLInputElement)) continue;
     const valEl = document.getElementById(k.valId);
+    updateSliderFill(slider);
     slider.addEventListener("input", () => {
       const v = parseFloat(slider.value);
       k.onChange(v);
       if (valEl) valEl.textContent = k.format(v);
+      updateSliderFill(slider);
     });
   }
 }
