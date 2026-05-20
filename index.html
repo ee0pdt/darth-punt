@@ -84,20 +84,30 @@ h1 {
 .subtitle { font-size: 0.6875rem; letter-spacing: 0.16em; color: var(--text-dim); }
 
 .header-readouts {
-  display:flex; gap:20px; align-items:center; flex-wrap:wrap;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.readout {
+.readout-inline {
   font-family: "Orbitron", sans-serif;
-  font-size: 0.65rem;
-  letter-spacing: 0.08em;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
 }
-.readout .val { font-size: 1rem; font-weight: 700; color: var(--cyan); }
-.readout .lbl { font-size: 0.6875rem; opacity: 0.55; color: var(--text-dim); }
+.readout-inline .lbl {
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.readout-inline .val {
+  color: var(--cyan);
+  font-weight: 700;
+}
 
 /* Visualiser */
 .viz-wrap {
@@ -376,19 +386,13 @@ input[type=range]::-webkit-slider-thumb {
       <div class="subtitle">CINEMATIC GENERATIVE SEQUENCER</div>
     </div>
     <div class="header-readouts">
-      <div class="readout">
-        <div class="val" id="barVal">—</div>
-        <div class="lbl">BAR</div>
-      </div>
-      <div class="readout">
-        <div class="val" id="bpmReadout">120</div>
-        <div class="lbl">BPM</div>
-      </div>
-      <div class="readout">
-        <div class="val" id="dramaReadout">5</div>
-        <div class="lbl">DRAMA</div>
-      </div>
-    </div>
+  <span class="readout-inline"><span class="lbl">BAR</span> <span class="val" id="barVal"
+    >—</span></span>
+  <span class="readout-inline"><span class="lbl">BPM</span> <span class="val" id="bpmReadout"
+    >120</span></span>
+  <span class="readout-inline"><span class="lbl">D</span> <span class="val" id="dramaReadout"
+    >5</span></span>
+</div>
   </header>
 
   <!-- Visualiser -->
