@@ -13,6 +13,13 @@ import type { PatternName } from "../types.ts";
 import { setDramaReadout } from "./readouts.ts";
 import { getAudio } from "../audio/graph.ts";
 
+const PATTERN_LABELS: Record<string, string> = {
+  tron: "TRON",
+  daft: "DAFT",
+  derezzed: "DEREZZED",
+  random: "RANDOM",
+};
+
 export interface ControlHandlers {
   onPlay(): void;
   onTension(): void;
@@ -38,11 +45,35 @@ export function mountControls(handlers: ControlHandlers): void {
   document.getElementById("tensionBtn")?.addEventListener("click", handlers.onTension);
   document.getElementById("clearBtn")?.addEventListener("click", clearAll);
 
-  // Pattern buttons
+  // Pattern trigger — opens drawer on PATTERNS tab
+  const patternTrigger = document.getElementById("patternTrigger");
+  const patternTriggerVal = document.getElementById("patternTriggerVal");
+  patternTrigger?.addEventListener("click", () => {
+    const drawer = document.getElementById("drawer");
+    const handle = document.getElementById("drawerHandle");
+    if (drawer && handle && !drawer.classList.contains("open")) {
+      drawer.classList.add("open");
+      drawer.setAttribute("aria-hidden", "false");
+      handle.setAttribute("aria-expanded", "true");
+    }
+    document.querySelectorAll<HTMLElement>(".drawer-tab").forEach((t) => {
+      const match = t.dataset.tab === "patterns";
+      t.classList.toggle("active", match);
+      t.setAttribute("aria-selected", match ? "true" : "false");
+    });
+    document.querySelectorAll<HTMLElement>(".drawer-pane").forEach((p) => {
+      p.classList.toggle("active", p.dataset.pane === "patterns");
+    });
+  });
+
+  // Pattern selection buttons (live inside PATTERNS tab)
   document.querySelectorAll<HTMLElement>("[data-pattern]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const name = btn.dataset.pattern as PatternName;
       loadPattern(name);
+      if (patternTriggerVal) {
+        patternTriggerVal.textContent = PATTERN_LABELS[name] ?? name.toUpperCase();
+      }
     });
   });
 

@@ -535,6 +535,43 @@ input[type="range"].slider:focus-visible {
 .drawer-pane.active {
   display: block;
 }
+
+.pattern-trigger-lbl {
+  color: var(--text-dim);
+  margin-right: 8px;
+}
+.pattern-trigger-val {
+  color: var(--cyan);
+  margin-right: 8px;
+}
+.pattern-trigger-chev {
+  color: var(--cyan-dim);
+}
+#patternTrigger {
+  gap: 6px;
+  padding: 0 14px;
+}
+
+.pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.pattern-divider {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 18px 0 12px;
+}
+.btn-secondary.danger {
+  border-color: rgba(255, 138, 61, 0.4);
+  color: var(--warn);
+}
+.btn-secondary.danger:hover {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: rgba(255, 138, 61, 0.08);
+  box-shadow: var(--glow-warn);
+}
 </style>
 </head>
 <body>
@@ -595,14 +632,11 @@ input[type="range"].slider:focus-visible {
   <div class="controls">
     <button class="btn-primary" id="playBtn">PLAY</button>
     <button class="btn-primary warn" id="tensionBtn">TENSION</button>
-    <button class="btn-secondary" id="clearBtn">CLEAR</button>
-
-    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-left: 4px">
-      <button class="btn-secondary" data-pattern="tron">TRON</button>
-      <button class="btn-secondary" data-pattern="daft">DAFT</button>
-      <button class="btn-secondary" data-pattern="derezzed">DEREZZED</button>
-      <button class="btn-secondary" data-pattern="random">RANDOM</button>
-    </div>
+    <button class="btn-secondary" id="patternTrigger" aria-haspopup="true">
+      <span class="pattern-trigger-lbl">PATTERN</span>
+      <span class="pattern-trigger-val" id="patternTriggerVal">—</span>
+      <span class="pattern-trigger-chev">▾</span>
+    </button>
   </div>
 
   <div class="status-row">
@@ -728,7 +762,16 @@ input[type="range"].slider:focus-visible {
     </label>
   </div>
 </div>
-      <div class="drawer-pane" data-pane="patterns" role="tabpanel"></div>
+      <div class="drawer-pane" data-pane="patterns" role="tabpanel">
+  <div class="pattern-grid">
+    <button class="btn-primary pattern-pick" data-pattern="tron">TRON</button>
+    <button class="btn-primary pattern-pick" data-pattern="daft">DAFT</button>
+    <button class="btn-primary pattern-pick" data-pattern="derezzed">DEREZZED</button>
+    <button class="btn-primary pattern-pick" data-pattern="random">RANDOM</button>
+  </div>
+  <hr class="pattern-divider" />
+  <button class="btn-secondary danger" id="clearBtn">✕ CLEAR GRID</button>
+</div>
     </div>
   </section>
 
