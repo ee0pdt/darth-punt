@@ -65,7 +65,7 @@ body {
 header {
   display:flex; align-items:center; justify-content:space-between;
   padding-bottom:12px;
-  border-bottom:1px solid rgba(0,245,255,0.12);
+  border-bottom:1px solid var(--line);
 }
 
 .logo {
@@ -103,7 +103,7 @@ h1 {
 .viz-wrap {
   height:90px;
   background:var(--surface);
-  border:1px solid rgba(0,245,255,0.08);
+  border:1px solid var(--line);
   position:relative; overflow:hidden;
 }
 canvas#viz { width:100%; height:100%; display:block; }
@@ -129,7 +129,7 @@ canvas#viz { width:100%; height:100%; display:block; }
 
 .auto-track {
   flex:1; height:3px;
-  background:rgba(0,245,255,0.06);
+  background:rgba(92,211,255,0.06);
   position:relative;
 }
 
@@ -155,7 +155,7 @@ canvas#viz { width:100%; height:100%; display:block; }
 
 .mute-btn {
   width:14px; height:14px;
-  border:1px solid rgba(0,245,255,0.2);
+  border:1px solid var(--cyan-low);
   background:transparent; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
   flex-shrink:0; transition:all 0.1s;
@@ -173,7 +173,7 @@ canvas#viz { width:100%; height:100%; display:block; }
 
 .step {
   aspect-ratio:1;
-  border:1px solid rgba(0,245,255,0.08);
+  border:1px solid var(--line);
   background:var(--surface);
   cursor:pointer;
   transition:background 0.06s, box-shadow 0.06s;
@@ -185,7 +185,7 @@ canvas#viz { width:100%; height:100%; display:block; }
 .step.active          { background:var(--cyan)!important;   border-color:var(--cyan)!important;   box-shadow:var(--glow-cyan)!important; }
 .step.active.beat-orange { background:var(--warn)!important; border-color:var(--warn)!important; box-shadow:var(--glow-warn)!important; }
 .step.active.beat-purple { background:var(--cyan)!important; border-color:var(--cyan)!important; box-shadow:var(--glow-cyan)!important; }
-.steps .step:nth-child(4n+1) { border-left-color:rgba(0,245,255,0.2); }
+.steps .step:nth-child(4n+1) { border-left-color:var(--cyan-low); }
 
 /* Controls row */
 .controls {
@@ -214,7 +214,7 @@ canvas#viz { width:100%; height:100%; display:block; }
 .knob-panel {
   display:flex; flex-direction:column; gap:8px;
   background:var(--surface);
-  border:1px solid rgba(0,245,255,0.08);
+  border:1px solid var(--line);
   padding:10px 14px;
 }
 
@@ -229,7 +229,7 @@ canvas#viz { width:100%; height:100%; display:block; }
 
 input[type=range] {
   -webkit-appearance:none; width:68px; height:2px;
-  background:rgba(0,245,255,0.12); outline:none;
+  background:var(--surface-2); outline:none;
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance:none; width:8px; height:8px;
