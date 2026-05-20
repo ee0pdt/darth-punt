@@ -144,13 +144,31 @@ canvas#viz { width:100%; height:100%; display:block; }
 }
 
 .auto-fill {
-  height:100%; width:0%;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(92, 211, 255, 0.1), var(--cyan));
   transition: width 0.4s linear;
 }
 
-.auto-fill.cyan   { background:linear-gradient(90deg,rgba(92,211,255,0.07),var(--cyan)); box-shadow:var(--cyan-low); }
-.auto-fill.orange { background:linear-gradient(90deg,rgba(255,138,61,0.07),var(--warn)); box-shadow:0 0 4px rgba(255,138,61,0.33); }
-.auto-fill.purple { background:linear-gradient(90deg,rgba(92,211,255,0.07),var(--cyan)); box-shadow:0 0 4px rgba(92,211,255,0.33); }
+.auto-meter {
+  display: inline-block;
+  position: relative;
+  width: 42px;
+  height: 3px;
+  margin: 0 8px;
+  background: rgba(92, 211, 255, 0.06);
+  vertical-align: middle;
+}
+.auto-meter-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(92, 211, 255, 0.1), var(--cyan));
+  transition: width 0.4s linear;
+}
+.auto-meter-val {
+  display: none;
+}
 
 .auto-val { width: 42px; font-size: 0.6875rem; color: var(--text-dim); text-align: left; flex-shrink: 0; }
 
@@ -605,23 +623,13 @@ input[type="range"].slider:focus-visible {
   <div class="auto-bars">
     <div class="auto-row">
       <div class="auto-label">FILTER</div>
-      <div class="auto-track"><div class="auto-fill cyan" id="fillFilter"></div></div>
+      <div class="auto-track"><div class="auto-fill" id="fillFilter"></div></div>
       <div class="auto-val" id="valFilter">—</div>
     </div>
     <div class="auto-row">
-      <div class="auto-label">REVERB</div>
-      <div class="auto-track"><div class="auto-fill purple" id="fillReverb"></div></div>
-      <div class="auto-val" id="valReverb">—</div>
-    </div>
-    <div class="auto-row">
       <div class="auto-label">PUMP</div>
-      <div class="auto-track"><div class="auto-fill orange" id="fillPump"></div></div>
+      <div class="auto-track"><div class="auto-fill" id="fillPump"></div></div>
       <div class="auto-val" id="valPump">—</div>
-    </div>
-    <div class="auto-row">
-      <div class="auto-label">DETUNE</div>
-      <div class="auto-track"><div class="auto-fill cyan" id="fillDetune"></div></div>
-      <div class="auto-val" id="valDetune">—</div>
     </div>
   </div>
 
@@ -688,11 +696,25 @@ input[type="range"].slider:focus-visible {
       <input type="range" class="slider" id="resSlider" min="0.5" max="18" value="5" step="0.1" />
     </div>
     <div class="slider-row">
-      <div class="slider-head"><span class="lbl">REVERB</span><span class="val" id="reverbVal">0.45</span></div>
+      <div class="slider-head">
+        <span class="lbl">REVERB</span>
+        <span class="auto-meter" aria-hidden="true">
+          <span class="auto-meter-fill" id="fillReverb"></span>
+          <span class="auto-meter-val" id="valReverb"></span>
+        </span>
+        <span class="val" id="reverbVal">0.45</span>
+      </div>
       <input type="range" class="slider" id="reverbSlider" min="0" max="1" value="0.45" step="0.01" />
     </div>
     <div class="slider-row">
-      <div class="slider-head"><span class="lbl">DETUNE</span><span class="val" id="detuneVal">8</span></div>
+      <div class="slider-head">
+        <span class="lbl">DETUNE</span>
+        <span class="auto-meter" aria-hidden="true">
+          <span class="auto-meter-fill" id="fillDetune"></span>
+          <span class="auto-meter-val" id="valDetune"></span>
+        </span>
+        <span class="val" id="detuneVal">8</span>
+      </div>
       <input type="range" class="slider" id="detuneSlider" min="0" max="35" value="8" />
     </div>
     <div class="slider-row">
