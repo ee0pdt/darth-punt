@@ -101,8 +101,19 @@ mountControls({ onPlay: togglePlay, onTension: triggerTension });
 loadPattern("tron");
 
 // Expose a tiny debug surface so playwright / devtools can probe state.
+// `analyserPeak` returns the max byte across the FFT bins — a non-zero value
+// is proof that audio is actually flowing through the graph (smoke test).
 (globalThis as unknown as { __darth?: Record<string, unknown> }).__darth = {
   version: VERSION,
   state: () => state,
   isSchedulerRunning: () => isSchedulerRunning(),
+  actxState: () => getAudio()?.actx.state ?? "not-created",
+  analyserPeak: () => {
+    const audio = getAudio();
+    if (!audio) return 0;
+    audio.analyser.getByteFrequencyData(audio.analyserData);
+    let peak = 0;
+    for (const v of audio.analyserData) if (v > peak) peak = v;
+    return peak;
+  },
 };

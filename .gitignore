@@ -10,3 +10,8 @@ dist/
 
 # Deno
 deno.lock.bak
+
+# Python / pytest
+__pycache__/
+.pytest_cache/
+e2e/.venv/
