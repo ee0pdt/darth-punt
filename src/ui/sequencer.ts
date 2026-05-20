@@ -17,7 +17,8 @@ export function mountSequencer(): void {
     const left = document.createElement("div");
     left.className = "track-left";
 
-    const mute = document.createElement("div");
+    const mute = document.createElement("button");
+    mute.type = "button";
     mute.className = "mute-btn";
     mute.title = "Mute";
     mute.addEventListener("click", () => {
@@ -26,7 +27,7 @@ export function mountSequencer(): void {
     });
 
     const lbl = document.createElement("div");
-    lbl.className = "track-label " + track.color;
+    lbl.className = "track-label";
     lbl.textContent = track.label;
 
     left.appendChild(mute);
@@ -37,7 +38,7 @@ export function mountSequencer(): void {
     steps.className = "steps";
     for (let s = 0; s < STEP_COUNT; s++) {
       const step = document.createElement("div");
-      step.className = "step beat-" + track.color;
+      step.className = "step";
       step.dataset.track = String(ti);
       step.dataset.step = String(s);
       step.addEventListener("click", () => {
