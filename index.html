@@ -590,6 +590,135 @@ input[type="range"].slider:focus-visible {
   background: rgba(255, 138, 61, 0.08);
   box-shadow: var(--glow-warn);
 }
+
+@media (max-width: 720px) {
+  body {
+    padding: 12px 0 24px;
+  }
+  .container {
+    width: 100vw;
+    gap: 10px;
+    padding: 0 12px;
+  }
+
+  /* Compact header */
+  header {
+    padding-bottom: 8px;
+  }
+  h1 {
+    font-size: clamp(1.2rem, 5vw, 1.6rem);
+  }
+  .subtitle {
+    display: none;
+  }
+  .header-readouts {
+    gap: 10px;
+  }
+  .readout-inline {
+    font-size: 0.75rem;
+  }
+  .readout-inline .lbl {
+    display: none;
+  }
+  .header-readouts .readout-inline + .readout-inline::before {
+    content: "·";
+    color: var(--text-dim);
+    margin-right: 8px;
+  }
+
+  /* Step cells */
+  .step {
+    min-height: 28px;
+  }
+  .steps .step:nth-child(4n+1) {
+    border-left: 1px solid var(--cyan-low);
+  }
+  .track-left {
+    width: 60px;
+    gap: 4px;
+  }
+  .mute-btn {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Transport stacks */
+  .controls {
+    gap: 8px;
+  }
+  .btn-primary {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    padding: 0 12px;
+    font-size: 0.65rem;
+  }
+  #patternTrigger {
+    flex: 1 1 100%;
+  }
+
+  /* Drawer becomes a bottom sheet overlay */
+  .drawer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    max-height: 0;
+    z-index: 50;
+    transition: max-height 240ms ease-out;
+    box-shadow: 0 -1px 0 var(--line), 0 -16px 24px rgba(0, 0, 0, 0.4);
+  }
+  .drawer.open {
+    max-height: 65vh;
+  }
+  .drawer-body {
+    max-height: calc(65vh - 56px);
+    overflow-y: auto;
+  }
+  .drawer-handle {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    z-index: 40;
+  }
+
+  /* Toggle grid 2 columns on mobile, label below switch */
+  .toggle-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .toggle-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* Slider grid 1 column on mobile */
+  .slider-grid {
+    grid-template-columns: 1fr;
+    gap: 6px 0;
+  }
+  .pattern-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    transition: none;
+  }
+  .toggle-knob {
+    transition: none;
+  }
+  #tensionBtn:not(.active) {
+    animation: none;
+  }
+  .status.playing {
+    animation: none;
+  }
+  .step.active {
+    transition: none;
+  }
+}
 </style>
 </head>
 <body>

@@ -21,6 +21,7 @@ export function mountDrawer(): void {
       if (id) selectTab(id);
     });
   });
+  attachSheetSwipe(drawer, handle);
 }
 
 function toggleDrawer(drawer: HTMLElement, handle: HTMLElement): void {
@@ -31,6 +32,37 @@ function setDrawerOpen(drawer: HTMLElement, handle: HTMLElement, open: boolean):
   drawer.classList.toggle("open", open);
   drawer.setAttribute("aria-hidden", open ? "false" : "true");
   handle.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function attachSheetSwipe(drawer: HTMLElement, handle: HTMLElement): void {
+  const tabs = drawer.querySelector<HTMLElement>(".drawer-tabs");
+  if (!tabs) return;
+
+  let startY: number | null = null;
+
+  tabs.addEventListener("touchstart", (ev) => {
+    if (!drawer.classList.contains("open")) return;
+    if (!matchMedia("(max-width: 720px)").matches) return;
+    const t = ev.touches[0];
+    if (t) startY = t.clientY;
+  }, { passive: true });
+
+  tabs.addEventListener("touchmove", (ev) => {
+    if (startY === null) return;
+    const t = ev.touches[0];
+    if (!t) return;
+    const dy = t.clientY - startY;
+    if (dy > 60) {
+      drawer.classList.remove("open");
+      drawer.setAttribute("aria-hidden", "true");
+      handle.setAttribute("aria-expanded", "false");
+      startY = null;
+    }
+  }, { passive: true });
+
+  tabs.addEventListener("touchend", () => {
+    startY = null;
+  }, { passive: true });
 }
 
 function selectTab(id: TabId): void {
