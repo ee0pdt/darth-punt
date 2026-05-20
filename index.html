@@ -224,23 +224,62 @@ canvas#viz { width:100%; height:100%; display:block; }
   display:flex; align-items:center; gap:10px; flex-wrap:wrap;
 }
 
-.btn {
-  font-family:'Orbitron',sans-serif;
-  font-size:0.6rem; letter-spacing:0.18em;
-  padding:9px 18px;
-  border:1px solid var(--cyan);
-  background:transparent; color:var(--cyan);
-  cursor:pointer; transition:all 0.12s;
-  white-space:nowrap;
+/* Primary buttons — PLAY, TENSION */
+.btn-primary {
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  height: 44px;
+  padding: 0 24px;
+  border: 1px solid var(--cyan);
+  background: transparent;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: background 0.1s, box-shadow 0.1s;
+  white-space: nowrap;
 }
-.btn:hover          { background:rgba(92,211,255,0.08); box-shadow:var(--glow-cyan); }
-.btn.active         { background:var(--cyan); color:var(--bg); box-shadow:var(--glow-cyan); }
-.btn.orange         { border-color:var(--warn); color:var(--warn); }
-.btn.orange:hover   { background:rgba(255,138,61,0.08); box-shadow:var(--glow-warn); }
-.btn.orange.active  { background:var(--warn); color:var(--bg); }
-.btn.purple         { border-color:var(--cyan); color:var(--cyan); }
-.btn.purple:hover   { background:rgba(92,211,255,0.08); box-shadow:var(--glow-cyan); }
-.btn.purple.active  { background:var(--cyan); color:var(--bg); }
+.btn-primary:hover {
+  background: rgba(92, 211, 255, 0.08);
+  box-shadow: var(--glow-cyan);
+}
+.btn-primary.active {
+  background: var(--cyan);
+  color: var(--bg);
+  box-shadow: var(--glow-cyan);
+}
+.btn-primary.warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.btn-primary.warn:hover {
+  background: rgba(255, 138, 61, 0.08);
+  box-shadow: var(--glow-warn);
+}
+.btn-primary.warn.active {
+  background: var(--warn);
+  color: var(--bg);
+  box-shadow: var(--glow-warn);
+}
+
+/* Secondary — pattern dropdown trigger, drawer tab triggers, etc. */
+.btn-secondary {
+  font-family: "Share Tech Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--cyan-low);
+  background: transparent;
+  color: var(--cyan-dim);
+  cursor: pointer;
+  transition: all 0.1s;
+  white-space: nowrap;
+}
+.btn-secondary:hover, .btn-secondary.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(92, 211, 255, 0.06);
+}
 
 /* Knob panels */
 .knob-panel {
@@ -288,10 +327,15 @@ input[type=range]::-webkit-slider-thumb {
   cursor:pointer; transition:all 0.1s;
 }
 .tag-btn:hover,.tag-btn.active { border-color:var(--cyan); color:var(--cyan); box-shadow:var(--cyan-low); }
-.tag-btn.ot { border-color:rgba(255,138,61,0.18); color:rgba(255,138,61,0.4); }
-.tag-btn.ot:hover,.tag-btn.ot.active { border-color:var(--warn); color:var(--warn); }
-.tag-btn.pt { border-color:rgba(92,211,255,0.18); color:rgba(92,211,255,0.4); }
-.tag-btn.pt:hover,.tag-btn.pt.active { border-color:var(--cyan); color:var(--cyan); }
+.tag-btn.ot, .tag-btn.pt {
+  border-color: var(--cyan-low);
+  color: var(--cyan-dim);
+}
+.tag-btn.ot:hover, .tag-btn.ot.active, .tag-btn.pt:hover, .tag-btn.pt.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: var(--glow-cyan);
+}
 
 /* Status */
 .status-row { display:flex; justify-content:space-between; align-items:center; }
@@ -301,22 +345,22 @@ input[type=range]::-webkit-slider-thumb {
 .event-log.show { opacity:1; }
 @keyframes pulse { 0%,100%{opacity:0.35} 50%{opacity:1} }
 
-/* Tension button special */
-.tension-btn {
-  font-family:'Orbitron',sans-serif;
-  font-size:0.6rem; letter-spacing:0.18em;
-  padding:9px 18px;
-  border:1px solid var(--warn);
-  background:transparent; color:var(--warn);
-  cursor:pointer; transition:all 0.12s;
+@keyframes tensionPulse {
+  0%, 100% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: var(--glow-warn);
+  }
+}
+#tensionBtn:not(.active) {
   animation: tensionPulse 2s ease-in-out infinite;
 }
-@keyframes tensionPulse { 0%,100%{box-shadow:none} 50%{box-shadow:var(--glow-warn)} }
-.tension-btn:hover { background:rgba(255,138,61,0.15); box-shadow:var(--glow-warn); }
-.tension-btn.releasing {
-  background:var(--warn); color:var(--bg);
-  box-shadow:var(--glow-warn);
-  animation:none;
+#tensionBtn.releasing {
+  background: var(--warn);
+  color: var(--bg);
+  box-shadow: var(--glow-warn);
+  animation: none;
 }
 </style>
 </head>
@@ -382,15 +426,15 @@ input[type=range]::-webkit-slider-thumb {
 
   <!-- Transport + Tension -->
   <div class="controls">
-    <button class="btn" id="playBtn">PLAY</button>
-    <button class="tension-btn" id="tensionBtn">TENSION</button>
-    <button class="btn orange" id="clearBtn">CLEAR</button>
+    <button class="btn-primary" id="playBtn">PLAY</button>
+    <button class="btn-primary warn" id="tensionBtn">TENSION</button>
+    <button class="btn-secondary" id="clearBtn">CLEAR</button>
 
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-left:4px;">
-      <button class="tag-btn" data-pattern="tron">TRON</button>
-      <button class="tag-btn" data-pattern="daft">DAFT</button>
-      <button class="tag-btn" data-pattern="derezzed">DEREZZED</button>
-      <button class="tag-btn" data-pattern="random">RANDOM</button>
+    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-left: 4px">
+      <button class="btn-secondary" data-pattern="tron">TRON</button>
+      <button class="btn-secondary" data-pattern="daft">DAFT</button>
+      <button class="btn-secondary" data-pattern="derezzed">DEREZZED</button>
+      <button class="btn-secondary" data-pattern="random">RANDOM</button>
     </div>
   </div>
 
