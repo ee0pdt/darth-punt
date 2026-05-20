@@ -100,6 +100,16 @@ export function mountControls(handlers: ControlHandlers): void {
       },
     },
     {
+      id: "masterVolSlider",
+      valId: "masterVolVal",
+      format: (v) => v.toFixed(2),
+      onChange: (v) => {
+        state.masterVolume = v;
+        const audio = getAudio();
+        if (audio) audio.masterGain.gain.value = v;
+      },
+    },
+    {
       id: "pumpSlider",
       valId: "pumpVal",
       format: (v) => v.toFixed(2),

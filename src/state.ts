@@ -25,6 +25,7 @@ export interface AppState {
   chordVol: number;
   chordSustain: number;
   padVol: number;
+  masterVolume: number;
   dramaLevel: number;
 
   // Filter sweep
@@ -79,6 +80,7 @@ export const state: AppState = {
   chordVol: 0.3,
   chordSustain: 3.0,
   padVol: 0.18,
+  masterVolume: 0.8,
   dramaLevel: 5,
 
   sweepBarCount: 0,

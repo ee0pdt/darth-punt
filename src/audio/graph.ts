@@ -21,7 +21,7 @@ export function initAudio(): AudioRefs {
     (globalThis as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
 
   const masterGain = actx.createGain();
-  masterGain.gain.value = 0.8;
+  masterGain.gain.value = state.masterVolume;
 
   const filterNode = actx.createBiquadFilter();
   filterNode.type = "lowpass";
