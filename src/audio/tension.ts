@@ -29,8 +29,11 @@ export function triggerTension(): void {
   rampTo(audio.reverbGain.gain, 0.9, now, 2);
 }
 
-/** Called from onBarStart with the bar's audio-clock start time. */
-export function releaseTension(t: number): void {
+/**
+ * Called from onBarStart with the bar's audio-clock start time. `chordIdx`
+ * voices the release chord to match the harmony (random if omitted).
+ */
+export function releaseTension(t: number, chordIdx?: number): void {
   const audio = getAudio();
   if (!audio) return;
   state.tensionActive = false;
@@ -40,7 +43,7 @@ export function releaseTension(t: number): void {
   rampTo(audio.filterNode.frequency, state.sweepMax, t, 0.3);
   rampTo(audio.filterNode.Q, state.resonance, t, 1);
   rampTo(audio.reverbGain.gain, state.reverbMix, t, 2);
-  triggerChordBlast(t);
+  triggerChordBlast(t, chordIdx);
 
   // Reset sweep cursor so the next sweep cycle starts near the top
   state.sweepBarCount = state.sweepBars - 2;

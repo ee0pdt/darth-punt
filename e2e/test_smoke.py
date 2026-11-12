@@ -21,6 +21,7 @@ TOGGLES = [
     "padsEnabled",
     "arpRumbleEnabled",
     "bpmDriftEnabled",
+    "followChords",
 ]
 
 
