@@ -140,8 +140,9 @@ export function mountControls(handlers: ControlHandlers): void {
       valId: "resVal",
       format: (v) => v.toFixed(1),
       onChange: (v) => {
+        state.resonance = v;
         const audio = getAudio();
-        if (audio) audio.filterNode.Q.value = v;
+        if (audio && !state.tensionActive) audio.filterNode.Q.value = v;
       },
     },
     {

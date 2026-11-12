@@ -2,7 +2,7 @@
  * Audio graph: builds the AudioContext + node chain once, then exposes it as
  * a singleton `audio` reference that every other audio module reads from.
  *
- *   source -> filter -> pump -> dry + reverb + delayWet -> master -> analyser -> out
+ *   source -> filter -> pump -> dry + reverb + delayWet -> master -> limiter -> analyser -> out
  */
 
 import { state } from "../state.ts";
@@ -26,7 +26,7 @@ export function initAudio(): AudioRefs {
   const filterNode = actx.createBiquadFilter();
   filterNode.type = "lowpass";
   filterNode.frequency.value = state.sweepMin;
-  filterNode.Q.value = 5;
+  filterNode.Q.value = state.resonance;
 
   const reverbNode = actx.createConvolver();
   reverbNode.buffer = makeImpulse(actx, 4, 3);
@@ -48,6 +48,14 @@ export function initAudio(): AudioRefs {
   const pumpGain = actx.createGain();
   pumpGain.gain.value = 1;
 
+  // Brick-wall-ish safety limiter so chord blasts + kick + pads can't clip the output
+  const limiter = actx.createDynamicsCompressor();
+  limiter.threshold.value = -3;
+  limiter.knee.value = 0;
+  limiter.ratio.value = 20;
+  limiter.attack.value = 0.002;
+  limiter.release.value = 0.2;
+
   const analyser = actx.createAnalyser();
   analyser.fftSize = 512;
   const analyserData = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
@@ -60,7 +68,8 @@ export function initAudio(): AudioRefs {
   reverbNode.connect(reverbGain);
   reverbGain.connect(masterGain);
   delayWet.connect(masterGain);
-  masterGain.connect(analyser);
+  masterGain.connect(limiter);
+  limiter.connect(analyser);
   analyser.connect(actx.destination);
 
   audio = {
@@ -74,8 +83,10 @@ export function initAudio(): AudioRefs {
     delayNode,
     delayFeedback,
     delayWet,
+    limiter,
     analyser,
     analyserData,
+    noiseBuffer: makeNoise(actx, 1),
   };
   return audio;
 }
@@ -89,6 +100,26 @@ function makeImpulse(ctx: AudioContext, duration: number, decay: number): AudioB
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
   }
   return buf;
+}
+
+// One shared second of white noise; drum voices play random slices of it
+// instead of filling a fresh buffer on the main thread for every hit.
+function makeNoise(ctx: AudioContext, duration: number): AudioBuffer {
+  const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+/**
+ * Ramp an AudioParam from its *current* value. A bare linearRampToValueAtTime
+ * starts from the previous scheduled event, which may be bars in the past,
+ * so the value would jump instead of glide. Anchoring at `from` fixes that.
+ */
+export function rampTo(param: AudioParam, value: number, from: number, dur: number): void {
+  param.cancelScheduledValues(from);
+  param.setValueAtTime(param.value, from);
+  param.linearRampToValueAtTime(value, from + dur);
 }
 
 export function midiToHz(n: number): number {

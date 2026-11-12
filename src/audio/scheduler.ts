@@ -8,7 +8,8 @@
 import { state } from "../state.ts";
 import { PAD_CHORDS } from "./rumbles.ts";
 import { STEP_COUNT, STICKY, TRACKS } from "../patterns.ts";
-import { getAudio } from "./graph.ts";
+import { getAudio, rampTo } from "./graph.ts";
+import { releaseTension } from "./tension.ts";
 import {
   triggerArp,
   triggerArpRumble,
@@ -45,6 +46,7 @@ export function startScheduler(): void {
   if (!audio) return;
   state.currentStep = 0;
   barTracker = 0;
+  state.barNumber = 0;
   state.sweepBarCount = 0;
   nextNoteTime = audio.actx.currentTime + 0.05;
   audio.delayNode.delayTime.value = (60 / state.bpm) * 0.75;
@@ -127,20 +129,22 @@ export function onBarStart(barNum: number, barStartTime: number): void {
   setBarReadout(barNum + 1);
 
   const drama = state.dramaLevel / 10;
+  const now = audio.actx.currentTime;
 
-  // Filter sweep — exponential ramp from sweepMin to sweepMax across sweepBars
-  if (state.sweepEnabled && !state.tensionActive) {
+  // Tension release lands on this bar's downbeat. It owns the filter + reverb
+  // for this bar, so the sweep and reverb swell below sit this one out.
+  const releasing = state.tensionActive && barNum >= state.tensionReleaseBar;
+  if (releasing) releaseTension(barStartTime);
+
+  // Filter sweep — exponential ramp from sweepMin to sweepMax across sweepBars.
+  // On wrap (count 0) freq is sweepMin, so the same ramp drops back to the bottom.
+  if (state.sweepEnabled && !state.tensionActive && !releasing) {
     state.sweepBarCount = (state.sweepBarCount + 1) % state.sweepBars;
     const t = state.sweepBarCount / state.sweepBars;
     const freq = state.sweepMin * Math.pow(state.sweepMax / state.sweepMin, t);
-    audio.filterNode.frequency.linearRampToValueAtTime(freq, audio.actx.currentTime + 0.5);
+    rampTo(audio.filterNode.frequency, freq, now, 0.5);
     updateAutoBar("fillFilter", "valFilter", t * 100, Math.round(freq) + "Hz");
     setCutoffReadout(Math.round(freq));
-    // Cycle wrap: snap back to the bottom of the sweep on bar 0
-    if (state.sweepBarCount === 0) {
-      audio.filterNode.frequency.cancelScheduledValues(audio.actx.currentTime + 0.51);
-      audio.filterNode.frequency.setValueAtTime(state.sweepMin, audio.actx.currentTime + 0.55);
-    }
   }
 
   // Pump automation — builds with filter, peaks before chord blasts
@@ -152,14 +156,11 @@ export function onBarStart(barNum: number, barStartTime: number): void {
   }
 
   // Reverb swell — peaks at chord blast bars (6-7 of each 8)
-  if (state.reverbAutoEnabled && !state.tensionActive) {
+  if (state.reverbAutoEnabled && !state.tensionActive && !releasing) {
     const cycle = barNum % 8;
     const reverbNew = state.reverbMix + (cycle >= 6 ? drama * 0.35 : 0);
     state.reverbTarget = Math.min(0.95, reverbNew);
-    audio.reverbGain.gain.linearRampToValueAtTime(
-      state.reverbTarget,
-      audio.actx.currentTime + 1.5,
-    );
+    rampTo(audio.reverbGain.gain, state.reverbTarget, now, 1.5);
     updateAutoBar(
       "fillReverb",
       "valReverb",
@@ -189,7 +190,8 @@ export function onBarStart(barNum: number, barStartTime: number): void {
     const newBpm = state.baseBpm + Math.sin(driftCycle * Math.PI * 2) * state.bpmDriftAmount;
     state.bpm = Math.round(newBpm);
     setBpmReadout(state.bpm);
-    audio.delayNode.delayTime.value = (60 / state.bpm) * 0.75;
+    // Glide rather than jump, so the echo tail doesn't click or warble
+    audio.delayNode.delayTime.setTargetAtTime((60 / state.bpm) * 0.75, now, 0.1);
   }
 
   // Mutate every 2 bars (skip pad row)
@@ -203,7 +205,7 @@ export function onBarStart(barNum: number, barStartTime: number): void {
 
   // Pad swell every 4 bars (rotating through PAD_CHORDS)
   if (state.padsEnabled && barNum % 4 === 0 && barNum > 0) {
-    triggerPad(barStartTime, state.currentPadChord);
+    triggerPad(barStartTime, state.currentPadChord, true);
     state.currentPadChord = (state.currentPadChord + 1) % PAD_CHORDS.length;
   }
 
