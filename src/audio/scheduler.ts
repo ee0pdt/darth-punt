@@ -65,6 +65,11 @@ function tick(): void {
   if (!audio) return;
   const stepDur = 60 / state.bpm / 4;
 
+  // Fell behind (context just resumed, busy main thread, throttled tab)?
+  // Shift the timeline forward rather than firing every overdue step at once,
+  // which would play a burst of notes with half-elapsed envelopes.
+  if (nextNoteTime < audio.actx.currentTime) nextNoteTime = audio.actx.currentTime + 0.01;
+
   while (nextNoteTime < audio.actx.currentTime + LOOK_AHEAD) {
     if (state.currentStep === 0) {
       // Defer onBarStart to the next macrotask so UI work stays off the audio

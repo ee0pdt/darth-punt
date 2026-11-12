@@ -25,14 +25,38 @@ export function triggerKick(t: number): void {
   osc.start(t);
   osc.stop(t + 0.42);
 
-  // Side-chain pump: dip master at the kick, recover over ~220ms.
+  // Side-chain pump: dip the mix at the kick, recover over ~220ms.
   // With PUMP automation on, the per-bar target from onBarStart drives depth.
   const pump = state.pumpAutoEnabled ? state.pumpTarget : state.pumpAmount;
-  if (pump > 0) {
-    pumpGain.gain.cancelScheduledValues(t);
-    pumpGain.gain.setValueAtTime(1 - pump * 0.8, t);
-    pumpGain.gain.linearRampToValueAtTime(1, t + 0.22);
-  }
+  if (pump > 0) schedulePump(pumpGain.gain, t, 1 - pump * 0.8);
+}
+
+const PUMP_ATTACK = 0.006;
+const PUMP_RECOVER = 0.22;
+let lastPump: { t0: number; v0: number; dip: number } | null = null;
+
+/** Value the pump envelope will have at time t, given the last dip scheduled. */
+function pumpValueAt(t: number): number {
+  if (!lastPump) return 1;
+  const { t0, v0, dip } = lastPump;
+  const dt = t - t0;
+  if (dt < 0) return 1;
+  if (dt < PUMP_ATTACK) return v0 + (dip - v0) * (dt / PUMP_ATTACK);
+  if (dt < PUMP_ATTACK + PUMP_RECOVER) return dip + (1 - dip) * ((dt - PUMP_ATTACK) / PUMP_RECOVER);
+  return 1;
+}
+
+// Kicks are scheduled ahead of time, so the gain's live `.value` is no guide
+// to where the envelope will be at `t`. Track the envelope analytically and
+// start each dip from that value: a short ramp down instead of an instant
+// step, which clicked on everything sustaining underneath the kick.
+function schedulePump(gain: AudioParam, t: number, dip: number): void {
+  const v0 = pumpValueAt(t);
+  gain.cancelScheduledValues(t);
+  gain.setValueAtTime(v0, t);
+  gain.linearRampToValueAtTime(dip, t + PUMP_ATTACK);
+  gain.linearRampToValueAtTime(1, t + PUMP_ATTACK + PUMP_RECOVER);
+  lastPump = { t0: t, v0, dip };
 }
 
 // Start each drum hit at a random point in the shared noise buffer so
