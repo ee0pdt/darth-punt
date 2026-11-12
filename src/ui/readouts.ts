@@ -1,51 +1,47 @@
 /**
- * Header readouts (BAR/BPM/DRAMA) and the four automation bars
- * (FILTER/REVERB/PUMP/DETUNE). Pure DOM updaters; no audio state lives here.
+ * Header readouts (BAR / CHORD / BPM) and live automation markers. The
+ * scheduler reports where automation has moved a parameter via `setLive`;
+ * the slider shows that as a ghost marker instead of yanking its thumb away
+ * from the value the user set. Pure DOM updaters; no audio state lives here.
  */
 
-export function setBarReadout(bar: number): void {
-  const el = document.getElementById("barVal");
-  if (el) el.textContent = String(bar);
+type LiveFn = (v: number | null) => void;
+const liveFns = new Map<string, LiveFn>();
+
+export function registerLive(id: string, fn: LiveFn): void {
+  liveFns.set(id, fn);
 }
 
+/** Show where automation currently has parameter `id` (null hides the marker). */
+export function setLive(id: string, v: number | null): void {
+  liveFns.get(id)?.(v);
+}
+
+export function clearLive(): void {
+  for (const fn of liveFns.values()) fn(null);
+}
+
+function text(id: string, value: string): void {
+  const el = document.getElementById(id);
+  if (el && el.textContent !== value) el.textContent = value;
+}
+
+export function setBarReadout(bar: number | null): void {
+  text("barVal", bar === null ? "—" : String(bar));
+}
+
+export function setChordReadout(name: string | null): void {
+  text("chordVal", name ?? "—");
+}
+
+/** Live tempo (including drift) in the header. */
 export function setBpmReadout(bpm: number): void {
-  const readout = document.getElementById("bpmReadout");
-  const val = document.getElementById("bpmVal");
-  const slider = document.getElementById("bpmSlider") as HTMLInputElement | null;
-  if (readout) readout.textContent = String(bpm);
-  if (val) val.textContent = String(bpm);
-  if (slider) slider.value = String(bpm);
+  text("bpmReadout", String(bpm));
 }
 
-export function setDramaReadout(drama: number): void {
-  const readout = document.getElementById("dramaReadout");
-  const val = document.getElementById("dramaVal");
-  if (readout) readout.textContent = String(drama);
-  if (val) val.textContent = String(drama);
-}
-
-export function setCutoffReadout(freq: number): void {
-  const val = document.getElementById("cutoffVal");
-  const slider = document.getElementById("cutoffSlider") as HTMLInputElement | null;
-  if (val) val.textContent = String(freq);
-  if (slider) slider.value = String(freq);
-}
-
-export function setDetuneReadout(detune: number): void {
-  const val = document.getElementById("detuneVal");
-  const slider = document.getElementById("detuneSlider") as HTMLInputElement | null;
-  if (val) val.textContent = String(detune);
-  if (slider) slider.value = String(detune);
-}
-
-export function updateAutoBar(
-  fillId: string,
-  valId: string,
-  pct: number,
-  val: string | number,
-): void {
-  const fill = document.getElementById(fillId);
-  const valEl = document.getElementById(valId);
-  if (fill) fill.style.width = Math.min(100, Math.max(0, pct)) + "%";
-  if (valEl) valEl.textContent = String(val);
+/** Bars left until a tension build drops; null when idle. */
+export function setTensionCountdown(bars: number | null): void {
+  const el = document.getElementById("tensionSub");
+  if (!el) return;
+  el.textContent = bars === null ? "" : bars <= 1 ? "DROP!" : `DROP IN ${bars}`;
 }

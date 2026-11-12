@@ -1,8 +1,10 @@
 /**
- * Event-log toast (lower-right of the status row), chord flash overlay above
- * the visualiser, and the radial purple tension overlay. All are pure DOM
+ * Event-log toast and chord flash (both overlaid on the visualiser), the
+ * radial tension overlay, and the TENSION button state. All are pure DOM
  * side effects with no audio coupling.
  */
+
+import { setTensionCountdown } from "./readouts.ts";
 
 const EVENT_LOG_MS = 2500;
 let eventTimer: number | undefined;
@@ -34,7 +36,9 @@ export function setTensionOverlay(active: boolean): void {
   overlay?.classList.toggle("active", active);
 }
 
-export function setTensionButton(releasing: boolean): void {
+export function setTensionButton(building: boolean): void {
   const btn = document.getElementById("tensionBtn");
-  btn?.classList.toggle("releasing", releasing);
+  btn?.classList.toggle("releasing", building);
+  btn?.setAttribute("aria-pressed", building ? "true" : "false");
+  if (!building) setTensionCountdown(null);
 }

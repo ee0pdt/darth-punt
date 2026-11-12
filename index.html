@@ -2,762 +2,509 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>DARTH PUNT</title>
 <meta name="description" content="DARTH PUNT — cinematic generative sequencer in the browser.">
-<meta name="theme-color" content="#010608">
+<meta name="theme-color" content="#05080d">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
 <link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@500;700;900&display=swap">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
-
+/* ==========================================================================
+   Tokens
+   ========================================================================== */
 :root {
-  --bg: #05090d;
-  --surface: #0a1219;
-  --surface-2: #0e1822;
-  --line: rgba(120, 180, 200, 0.10);
+  color-scheme: dark;
+  --bg: #05080d;
+  --panel: rgba(16, 27, 38, 0.72);
+  --panel-solid: #0c151f;
+  --raise: rgba(255, 255, 255, 0.045);
+  --raise-2: rgba(255, 255, 255, 0.08);
+  --hair: rgba(150, 205, 235, 0.09);
+  --hair-2: rgba(150, 205, 235, 0.16);
+  --text: #dcedf5;
+  --muted: rgba(220, 237, 245, 0.62);
+  --faint: rgba(220, 237, 245, 0.38);
   --cyan: #5cd3ff;
-  --cyan-dim: rgba(92, 211, 255, 0.45);
-  --cyan-low: rgba(92, 211, 255, 0.18);
+  --violet: #b07bff;
   --warn: #ff8a3d;
-  --text: #cfe6f0;
-  --text-dim: rgba(207, 230, 240, 0.55);
-  --glow-cyan: 0 0 8px var(--cyan), 0 0 24px rgba(92, 211, 255, 0.2);
-  --glow-warn: 0 0 8px var(--warn), 0 0 24px rgba(255, 138, 61, 0.2);
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --gutter: 16px;
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+  --font-display: "Orbitron", var(--font-ui);
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --cell-h: clamp(30px, 6vh, 58px);
 }
 
-* { margin:0; padding:0; box-sizing:border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+button, label, .slider, .step { -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
 
+html { background: var(--bg); }
 body {
-  background: var(--bg);
+  min-height: 100dvh;
   color: var(--text);
-  font-family: "Share Tech Mono", monospace;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 20px 0 40px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(92, 211, 255, 0.10), transparent 60%),
+    radial-gradient(900px 600px at 110% 10%, rgba(176, 123, 255, 0.08), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
   overflow-x: hidden;
-  position: relative;
 }
 
-/* Tension overlay */
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* ==========================================================================
+   App shell — wide: stage + sidebar, medium: single column
+   ========================================================================== */
+.app {
+  width: min(1480px, 100%);
+  margin: 0 auto;
+  padding: 18px max(var(--gutter), env(safe-area-inset-right)) 28px max(var(--gutter), env(safe-area-inset-left));
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "head" "stage" "side";
+}
+.topbar { grid-area: head; }
+.stage { grid-area: stage; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.controls-panel { grid-area: side; min-width: 0; }
+
+@media (min-width: 1100px) and (min-height: 521px) {
+  .app { grid-template-columns: minmax(0, 1fr) 340px; grid-template-areas: "head head" "stage side"; align-items: start; }
+  .controls-panel {
+    position: sticky; top: 16px;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-color: var(--hair-2) transparent;
+  }
+  #panels { grid-template-columns: 1fr !important; }
+}
+
+/* ==========================================================================
+   Top bar: brand · transport · readouts
+   ========================================================================== */
+.topbar { display: flex; align-items: center; gap: 16px 24px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+.brand img { width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 0 24px rgba(92, 211, 255, 0.25); }
+.brand h1 {
+  font-family: var(--font-display); font-weight: 900;
+  font-size: clamp(1.1rem, 2.4vw, 1.6rem); letter-spacing: 0.22em; line-height: 1;
+  color: var(--cyan); text-shadow: 0 0 18px rgba(92, 211, 255, 0.45);
+  white-space: nowrap;
+}
+.brand p { margin-top: 5px; font-size: 11px; letter-spacing: 0.18em; color: var(--faint); text-transform: uppercase; }
+
+.readouts { display: flex; gap: 6px; }
+.readout {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 62px; height: 48px; padding: 0 12px;
+  background: var(--raise); border: 1px solid var(--hair); border-radius: var(--r-md);
+}
+.readout .lbl { font-size: 10px; letter-spacing: 0.16em; color: var(--faint); }
+.readout .val { font-family: var(--font-mono); font-size: 18px; color: var(--text); line-height: 1.1; }
+body.is-playing .readout .val { color: var(--cyan); }
+
+/* Transport */
+.transport { display: flex; align-items: center; gap: 10px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  height: 48px; padding: 0 20px; border-radius: 999px;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: 0.16em;
+  border: 1px solid var(--hair-2); background: var(--raise);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.2s, color 0.15s, transform 0.1s;
+  white-space: nowrap; user-select: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+
+.btn-play { min-width: 128px; border-color: rgba(92, 211, 255, 0.55); color: var(--cyan); padding-left: 8px; }
+.btn-play .ico {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--cyan); color: var(--bg);
+}
+.btn-play .ico svg { width: 14px; height: 14px; }
+.btn-play .i-stop { display: none; }
+.btn-play.active { background: rgba(92, 211, 255, 0.14); box-shadow: 0 0 24px rgba(92, 211, 255, 0.25); }
+.btn-play.active .i-play { display: none; }
+.btn-play.active .i-stop { display: block; }
+@media (hover: hover) { .btn-play:hover { background: rgba(92, 211, 255, 0.1); } }
+
+.btn-tension {
+  flex-direction: column; gap: 1px; min-width: 132px;
+  border-color: rgba(255, 138, 61, 0.55); color: var(--warn);
+}
+.btn-tension .sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; font-weight: 400; opacity: 0.85; }
+.btn-tension .sub:empty { display: none; }
+.btn-tension[aria-disabled="true"] { opacity: 0.45; border-color: var(--hair-2); color: var(--muted); }
+body.is-playing .btn-tension:not(.releasing) { animation: tensionPulse 2.4s ease-in-out infinite; }
+.btn-tension.releasing { background: var(--warn); color: var(--bg); box-shadow: 0 0 28px rgba(255, 138, 61, 0.45); }
+@media (hover: hover) {
+  .btn-tension:not([aria-disabled="true"]):not(.releasing):hover { background: rgba(255, 138, 61, 0.1); }
+}
+@keyframes tensionPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 138, 61, 0); }
+  50% { box-shadow: 0 0 22px rgba(255, 138, 61, 0.35); }
+}
+
+.btn-sound { display: none; color: var(--text); }
+
+/* ==========================================================================
+   Visualiser
+   ========================================================================== */
+.viz-wrap {
+  position: relative; height: 96px; overflow: hidden;
+  border-radius: var(--r-lg); border: 1px solid var(--hair);
+  background: linear-gradient(180deg, rgba(92, 211, 255, 0.03), rgba(176, 123, 255, 0.05)), var(--panel);
+}
+canvas#viz { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.viz-overlay {
+  position: absolute; inset: 0; padding: 10px 14px;
+  display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none;
+}
+.status {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 3px 9px 3px 8px; border-radius: 999px; background: rgba(5, 8, 13, 0.6);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; color: var(--faint);
+}
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+body.is-playing .status { color: var(--cyan); }
+body.is-playing .status::before { box-shadow: 0 0 8px var(--cyan); animation: blink 1.2s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: 0.3; } }
+.event-log {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; color: var(--text);
+  padding: 4px 10px; border-radius: 999px; background: rgba(5, 8, 13, 0.6); border: 1px solid var(--hair-2);
+  opacity: 0; transform: translateY(-4px); transition: opacity 0.25s, transform 0.25s var(--ease);
+}
+.event-log.show { opacity: 1; transform: none; }
+.viz-hint {
+  position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.22em; color: var(--faint);
+  transition: opacity 0.3s;
+}
+body.is-playing .viz-hint { opacity: 0; }
+.chord-flash { position: absolute; inset: 0; background: rgba(92, 211, 255, 0.22); opacity: 0; pointer-events: none; }
+.chord-flash.active { opacity: 1; transition: none; }
+.chord-flash.fade { opacity: 0; transition: opacity 0.6s ease; }
+
+/* ==========================================================================
+   Grid card + toolbar
+   ========================================================================== */
+.grid-card {
+  background: var(--panel); border: 1px solid var(--hair); border-radius: var(--r-lg);
+  padding: 12px; display: flex; flex-direction: column; gap: 12px;
+}
+.grid-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.grid-toolbar .spacer { flex: 1; }
+
+.segmented {
+  display: flex; padding: 3px; gap: 2px;
+  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--hair); border-radius: 999px;
+}
+.segmented button {
+  height: 36px; padding: 0 14px; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+}
+.segmented button[aria-pressed="true"] { background: var(--raise-2); color: var(--cyan); box-shadow: inset 0 0 0 1px rgba(92, 211, 255, 0.35); }
+@media (hover: hover) { .segmented button:hover { color: var(--text); } }
+
+.icon-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; color: var(--muted);
+  border: 1px solid var(--hair-2);
+}
+.icon-btn svg { width: 14px; height: 14px; }
+@media (hover: hover) { .icon-btn:hover { color: var(--warn); border-color: rgba(255, 138, 61, 0.5); } }
+
+.pages { display: none; }
+
+/* Sequencer */
+.sequencer { display: flex; flex-direction: column; gap: 6px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.track { display: flex; align-items: stretch; gap: 10px; }
+.track[data-kind="kick"]  { --c: #ff7a45; }
+.track[data-kind="snare"] { --c: #ffb347; }
+.track[data-kind="hihat"] { --c: #ffe08a; }
+.track[data-kind="bass"]  { --c: #ff5f8f; }
+.track[data-kind="lead"]  { --c: #5cd3ff; }
+.track[data-kind="arp"]   { --c: #6ef0d0; }
+.track[data-kind="pad"]   { --c: #b07bff; }
+
+.track-chip {
+  flex: none; width: 76px; display: flex; align-items: center; gap: 8px; padding: 0 10px;
+  border-radius: var(--r-sm); background: var(--raise);
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; color: var(--text);
+  transition: background 0.15s, color 0.15s;
+}
+.track-chip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); flex: none; transition: all 0.15s; }
+@media (hover: hover) { .track-chip:hover { background: var(--raise-2); } }
+.track.muted .track-chip { color: var(--faint); }
+.track.muted .track-chip .dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--faint); }
+.track.muted .track-chip .name { text-decoration: line-through; text-decoration-color: var(--faint); }
+
+.steps { flex: 1; display: flex; gap: 8px; min-width: 0; }
+.beat { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; min-width: 0; }
+.step {
+  height: var(--cell-h); min-width: 0; border-radius: 7px;
+  background: var(--raise); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  transition: background 0.12s, box-shadow 0.12s, transform 0.08s;
+}
+.beat > .step:where(:first-child) { background: rgba(255, 255, 255, 0.07); }
+@media (hover: hover) { .step:hover { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--c) 60%, transparent); } }
+.step.on {
+  background: color-mix(in oklab, var(--c) 72%, #0b1420);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 0 12px color-mix(in oklab, var(--c) 30%, transparent);
+}
+.step.active { background: rgba(255, 255, 255, 0.13); }
+.step.on.active {
+  background: color-mix(in oklab, var(--c) 85%, white);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6), 0 0 22px var(--c);
+  transform: scale(1.05);
+  transition: none;
+}
+.track.muted .step { opacity: 0.32; }
+.step:focus-visible { outline-offset: 1px; position: relative; z-index: 1; }
+
+/* ==========================================================================
+   Sound panels
+   ========================================================================== */
+.sheet-head { display: none; }
+#panels { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.card {
+  background: var(--panel); border: 1px solid var(--hair); border-radius: var(--r-lg);
+  padding: 14px 16px 6px;
+}
+.card h2 {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--muted);
+}
+.card h2::before { content: ""; width: 14px; height: 2px; border-radius: 2px; background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+
+.param { padding: 8px 0 2px; }
+.param + .param, .switch-row + .param, .param + .switch-row { border-top: 1px solid var(--hair); }
+.param-head { display: flex; align-items: center; gap: 8px; min-height: 28px; }
+.param-name { font-size: 14px; color: var(--text); margin-right: auto; }
+.param-val { font-family: var(--font-mono); font-size: 14px; color: var(--cyan); min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+.param.is-off .param-val, .param.is-off .param-name { color: var(--faint); }
+.param.is-off .slider { opacity: 0.4; }
+
+/* Slider */
+.slider {
+  --f: 0; --live: 0;
+  position: relative; height: 40px; display: flex; align-items: center;
+  cursor: pointer; touch-action: pan-y; outline: none;
+  padding: 0 11px; /* keep the thumb inside the card at the extremes */
+}
+.slider-track { position: relative; flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.09); }
+.slider-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--f) * 100%); border-radius: 3px;
+  background: linear-gradient(90deg, rgba(92, 211, 255, 0.35), var(--cyan));
+}
+.slider-thumb {
+  position: absolute; top: 50%; left: calc(var(--f) * 100%);
+  width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%;
+  background: #e8f7ff; box-shadow: 0 0 0 4px rgba(92, 211, 255, 0.22), 0 2px 8px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.slider.dragging .slider-thumb { transform: scale(1.12); box-shadow: 0 0 0 7px rgba(92, 211, 255, 0.25), 0 0 18px rgba(92, 211, 255, 0.5); }
+.slider:focus-visible .slider-thumb { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--cyan); }
+.slider-live {
+  position: absolute; top: 50%; left: calc(var(--live) * 100%);
+  width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+  border: 2px solid var(--violet); background: var(--bg); box-shadow: 0 0 10px var(--violet);
+  transition: left 0.6s var(--ease); pointer-events: none;
+}
+.param.is-auto .param-val::before { content: "● "; color: var(--violet); font-size: 9px; vertical-align: 2px; }
+
+/* Pill toggle (automation / layer on-off) */
+.pill {
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--hair-2);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint);
+  cursor: pointer; user-select: none; transition: all 0.15s;
+}
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+.pill::after { content: ""; position: absolute; inset: -9px -4px; } /* 44px touch target */
+.pill input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+.pill:has(input:checked) { color: var(--violet); border-color: rgba(176, 123, 255, 0.5); background: rgba(176, 123, 255, 0.12); }
+.pill:has(input:checked)::before { opacity: 1; box-shadow: 0 0 6px currentColor; }
+.pill:has(input:focus-visible) { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.pill-lg { height: 36px; padding: 0 14px; font-size: 12px; }
+.pill-lg::after { inset: -4px; }
+
+/* Standalone switch row */
+.switch-row {
+  position: relative; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 0;
+  cursor: pointer;
+}
+.switch-row input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+.switch-row .flag-text { flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.switch-hint { font-size: 12px; color: var(--faint); }
+.switch-row::after {
+  content: ""; flex: none; width: 42px; height: 24px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1); transition: background 0.15s;
+}
+.switch-row::before {
+  content: ""; position: absolute; right: 21px; top: 50%; width: 18px; height: 18px; margin-top: -9px;
+  border-radius: 50%; background: #9fb3bf; transition: transform 0.18s var(--ease), background 0.15s; z-index: 0;
+}
+.switch-row:has(input:checked)::after { background: rgba(176, 123, 255, 0.55); }
+.switch-row:has(input:checked)::before { transform: translateX(18px); background: #fff; }
+.switch-row:has(input:focus-visible) { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: var(--r-sm); }
+
+/* ==========================================================================
+   Tension overlay
+   ========================================================================== */
 .tension-overlay {
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(255, 138, 61, 0.12) 100%);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 5;
-  transition: opacity 1s ease;
+  position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: 0; transition: opacity 1s ease;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(255, 138, 61, 0.16) 100%);
 }
 .tension-overlay.active { opacity: 1; }
 
-.container {
-  position:relative; z-index:10;
-  width: min(1020px, 96vw);
-  display:flex; flex-direction:column; gap:14px;
-}
+.sheet-backdrop { display: none; }
 
-/* Header */
-header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding-bottom:12px;
-  border-bottom:1px solid var(--line);
-}
-
-.logo {
-  display:flex; flex-direction:column; gap:2px;
-}
-
-h1 {
-  font-family:'Orbitron',sans-serif; font-weight:900;
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
-  letter-spacing:0.25em;
-  background: linear-gradient(135deg, var(--cyan) 0%, var(--cyan) 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  filter: drop-shadow(0 0 12px rgba(92,211,255,0.4));
-}
-
-.subtitle { font-size: 0.6875rem; letter-spacing: 0.16em; color: var(--text-dim); }
-
-.header-readouts {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.readout-inline {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.85rem;
-  letter-spacing: 0.06em;
-  display: inline-flex;
-  gap: 6px;
-  align-items: baseline;
-}
-.readout-inline .lbl {
-  font-size: 0.6875rem;
-  letter-spacing: 0.12em;
-  color: var(--text-dim);
-  text-transform: uppercase;
-}
-.readout-inline .val {
-  color: var(--cyan);
-  font-weight: 700;
-}
-
-.master-vol {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: "Share Tech Mono", monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-}
-.master-vol .lbl {
-  color: var(--text-dim);
-  text-transform: uppercase;
-}
-.master-vol .val {
-  color: var(--cyan);
-  font-weight: 700;
-  min-width: 28px;
-  text-align: right;
-}
-.master-vol input[type="range"].slider {
-  width: 96px;
-}
-
-/* Visualiser */
-.viz-wrap {
-  height:90px;
-  background:var(--surface);
-  border:1px solid var(--line);
-  position:relative; overflow:hidden;
-}
-canvas#viz { width:100%; height:100%; display:block; }
-
-.chord-flash {
-  position:absolute; inset:0;
-  background:rgba(92,211,255,0.2);
-  opacity:0; pointer-events:none;
-}
-.chord-flash.active { opacity:1; transition:none; }
-.chord-flash.fade   { opacity:0; transition:opacity 0.6s ease; }
-
-/* Automation bars */
-.auto-bars {
-  display:flex; flex-direction:column; gap:5px;
-}
-
-.auto-row {
-  display:flex; align-items:center; gap:8px;
-}
-
-.auto-label { width: 70px; font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--text-dim); text-align: right; flex-shrink: 0; }
-
-.auto-track {
-  flex:1; height:3px;
-  background:rgba(92,211,255,0.06);
-  position:relative;
-}
-
-.auto-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, rgba(92, 211, 255, 0.1), var(--cyan));
-  transition: width 0.4s linear;
-}
-
-.auto-meter {
-  display: inline-block;
-  position: relative;
-  width: 42px;
-  height: 3px;
-  margin: 0 8px;
-  background: rgba(92, 211, 255, 0.06);
-  vertical-align: middle;
-}
-.auto-meter-fill {
-  display: block;
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, rgba(92, 211, 255, 0.1), var(--cyan));
-  transition: width 0.4s linear;
-}
-.auto-meter-val {
-  display: none;
-}
-
-.auto-val { width: 42px; font-size: 0.6875rem; color: var(--text-dim); text-align: left; flex-shrink: 0; }
-
-/* Sequencer */
-.sequencer { display:flex; flex-direction:column; gap:4px; }
-
-.track { display:flex; align-items:center; gap:6px; }
-
-.track-left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 80px;
-  flex-shrink: 0;
-}
-
-.mute-btn {
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--cyan-low);
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: all 0.1s;
-  padding: 0;
-}
-.mute-btn:hover {
-  border-color: var(--cyan);
-}
-.mute-btn.muted {
-  background: var(--cyan-low);
-  border-color: var(--cyan-dim);
-}
-.mute-btn::after {
-  content: "";
-  width: 10px;
-  height: 10px;
-  background: var(--cyan-dim);
-}
-.mute-btn.muted::after {
-  background: var(--text-dim);
-}
-
-.track-label { font-size: 0.6875rem; letter-spacing: 0.08em; color: var(--text-dim); text-align: right; flex: 1; }
-
-.steps {
-  display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  gap: 3px;
-  flex: 1;
-}
-
-.step {
-  aspect-ratio: 1;
-  min-height: 32px;
-  border: 1px solid var(--cyan-low);
-  background: var(--surface);
-  cursor: pointer;
-  transition: background 0.06s, box-shadow 0.06s;
-}
-
-.step.on {
-  background: rgba(92, 211, 255, 0.16);
-  border-color: var(--cyan-dim);
-}
-.step.active {
-  background: var(--cyan) !important;
-  border-color: var(--cyan) !important;
-  box-shadow: var(--glow-cyan) !important;
-}
-
-.steps .step:nth-child(4n+1) {
-  border-left: 2px solid var(--cyan-low);
-}
-
-/* Controls row */
-.controls {
-  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-}
-
-/* Primary buttons — PLAY, TENSION */
-.btn-primary {
-  font-family: "Orbitron", sans-serif;
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  height: 44px;
-  padding: 0 24px;
-  border: 1px solid var(--cyan);
-  background: transparent;
-  color: var(--cyan);
-  cursor: pointer;
-  transition: background 0.1s, box-shadow 0.1s;
-  white-space: nowrap;
-}
-.btn-primary:hover {
-  background: rgba(92, 211, 255, 0.08);
-  box-shadow: var(--glow-cyan);
-}
-.btn-primary.active {
-  background: var(--cyan);
-  color: var(--bg);
-  box-shadow: var(--glow-cyan);
-}
-.btn-primary.warn {
-  border-color: var(--warn);
-  color: var(--warn);
-}
-.btn-primary.warn:hover {
-  background: rgba(255, 138, 61, 0.08);
-  box-shadow: var(--glow-warn);
-}
-.btn-primary.warn.active {
-  background: var(--warn);
-  color: var(--bg);
-  box-shadow: var(--glow-warn);
-}
-
-/* Secondary — pattern dropdown trigger, drawer tab triggers, etc. */
-.btn-secondary {
-  font-family: "Share Tech Mono", monospace;
-  font-size: 0.6rem;
-  letter-spacing: 0.08em;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--cyan-low);
-  background: transparent;
-  color: var(--cyan-dim);
-  cursor: pointer;
-  transition: all 0.1s;
-  white-space: nowrap;
-}
-.btn-secondary:hover, .btn-secondary.active {
-  border-color: var(--cyan);
-  color: var(--cyan);
-  background: rgba(92, 211, 255, 0.06);
-}
-
-/* Slider rows — used in MIX drawer tab */
-.slider-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px 0;
-  min-height: 44px;
-  justify-content: center;
-}
-.slider-row .slider-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-family: "Share Tech Mono", monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.08em;
-}
-.slider-row .slider-head .lbl { color: var(--text-dim); }
-.slider-row .slider-head .val { color: var(--cyan); }
-
-input[type="range"].slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  background: linear-gradient(
-    to right,
-    var(--cyan-low) 0%,
-    var(--cyan-low) var(--pct, 0%),
-    var(--surface-2) var(--pct, 0%),
-    var(--surface-2) 100%
-  );
-  outline: none;
-  cursor: pointer;
-  margin: 0;
-  padding: 0;
-}
-input[type="range"].slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 4px;
-  height: 16px;
-  background: var(--cyan);
-  box-shadow: var(--glow-cyan);
-  cursor: pointer;
-  border: none;
-  border-radius: 0;
-}
-input[type="range"].slider::-moz-range-thumb {
-  width: 4px;
-  height: 16px;
-  background: var(--cyan);
-  box-shadow: var(--glow-cyan);
-  cursor: pointer;
-  border: none;
-  border-radius: 0;
-}
-input[type="range"].slider:focus-visible {
-  outline: 2px solid var(--cyan);
-  outline-offset: 4px;
-}
-
-.slider-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px 24px;
-}
-
-/* Toggle switch — iOS-class, Tron themed */
-.toggle-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-}
-
-.toggle {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 22px;
-  flex-shrink: 0;
-}
-.toggle input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  margin: 0;
-  width: 100%;
-  height: 100%;
-}
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  border: 1px solid var(--cyan-low);
-  background: transparent;
-  transition: border-color 0.12s, background 0.12s;
-}
-.toggle-knob {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  background: transparent;
-  border: 1px solid rgba(207, 230, 240, 0.35);
-  transition:
-    transform 120ms cubic-bezier(0.4, 0, 0.2, 1),
-    background 0.12s,
-    border-color 0.12s,
-    box-shadow 0.12s;
-}
-.toggle input:checked ~ .toggle-track {
-  border-color: var(--cyan);
-  background: rgba(92, 211, 255, 0.06);
-}
-.toggle input:checked ~ .toggle-knob {
-  transform: translateX(22px);
-  background: var(--cyan);
-  border-color: var(--cyan);
-  box-shadow: var(--glow-cyan);
-}
-.toggle input:focus-visible ~ .toggle-track {
-  outline: 2px solid var(--cyan);
-  outline-offset: 2px;
-}
-
-.toggle-label {
-  font-family: "Share Tech Mono", monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-  transition: color 0.12s;
-}
-.toggle-row:has(.toggle input:checked) .toggle-label {
-  color: var(--text);
-}
-
-.toggle-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 4px;
-}
-
-/* Status */
-.status-row { display:flex; justify-content:space-between; align-items:center; }
-.status { font-size: 0.6875rem; letter-spacing: 0.16em; color: var(--text-dim); }
-.status.playing { color:var(--cyan); animation:pulse 1.4s ease-in-out infinite; }
-.event-log { font-size: 0.6875rem; letter-spacing: 0.1em; color: var(--cyan); text-shadow: var(--glow-cyan); opacity: 0; transition: opacity 0.25s; }
-.event-log.show { opacity:1; }
-@keyframes pulse { 0%,100%{opacity:0.35} 50%{opacity:1} }
-
-@keyframes tensionPulse {
-  0%, 100% {
-    box-shadow: none;
+/* ==========================================================================
+   Compact: phones (portrait < 700px wide, or any short landscape screen).
+   App fills the viewport, the grid stretches to fit, controls live in a sheet.
+   ========================================================================== */
+@media (max-width: 699px), (max-height: 520px) {
+  :root { --gutter: 12px; }
+  html, body { height: 100%; overflow: hidden; }
+  .app {
+    height: 100dvh; padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: 10px;
+    grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head" "stage"; gap: 10px;
   }
-  50% {
-    box-shadow: var(--glow-warn);
+  .brand img { width: 28px; height: 28px; border-radius: 8px; }
+  .brand p { display: none; }
+  .readout { min-width: 50px; height: 40px; padding: 0 8px; }
+  .readout .val { font-size: 15px; }
+  .stage { min-height: 0; gap: 10px; }
+  .viz-wrap { height: 56px; flex: none; border-radius: var(--r-md); }
+  .grid-card { flex: 1; min-height: 0; padding: 10px; gap: 10px; }
+  .sequencer { flex: 1; min-height: 0; }
+  .track { flex: 1; min-height: 0; gap: 6px; }
+  .step { height: 100%; min-height: 26px; }
+  .track-chip { width: 56px; padding: 0 7px; gap: 6px; font-size: 11px; letter-spacing: 0.04em; }
+  .btn-sound { display: inline-flex; }
+
+  /* Sheet */
+  .controls-panel {
+    position: fixed; z-index: 80; left: 0; right: 0; bottom: 0;
+    max-height: 86dvh; display: flex; flex-direction: column;
+    background: var(--panel-solid); border-top: 1px solid var(--hair-2);
+    border-radius: 22px 22px 0 0; box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.6);
+    transform: translateY(calc(100% + 24px)); visibility: hidden;
+    transition: transform 0.32s var(--ease), visibility 0s 0.32s;
   }
-}
-#tensionBtn:not(.active) {
-  animation: tensionPulse 2s ease-in-out infinite;
-}
-#tensionBtn.releasing {
-  background: var(--warn);
-  color: var(--bg);
-  box-shadow: var(--glow-warn);
-  animation: none;
-}
-
-/* Drawer handle */
-.drawer-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  height: 32px;
-  border: none;
-  border-top: 1px solid var(--line);
-  background: transparent;
-  color: var(--text-dim);
-  font-family: "Share Tech Mono", monospace;
-  font-size: 0.6875rem;
-  letter-spacing: 0.16em;
-  cursor: pointer;
-  transition: color 0.1s, background 0.1s;
-}
-.drawer-handle:hover {
-  color: var(--cyan);
-  background: rgba(92, 211, 255, 0.04);
-}
-.drawer-handle-icon {
-  font-size: 0.9rem;
-  opacity: 0.7;
-}
-
-/* Drawer body */
-.drawer {
-  width: 100%;
-  background: var(--surface);
-  border-top: 1px solid var(--line);
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 240ms ease-out;
-}
-.drawer.open {
-  max-height: 360px;
-}
-
-.drawer-tabs {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
-}
-
-.drawer-close {
-  margin-left: auto;
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  border: 1px solid var(--cyan-low);
-  color: var(--cyan-dim);
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: color 0.1s, border-color 0.1s;
-}
-.drawer-close:hover {
-  color: var(--cyan);
-  border-color: var(--cyan);
-}
-
-.drawer-body {
-  padding: 14px;
-}
-.drawer-pane {
-  display: none;
-}
-.drawer-pane.active {
-  display: block;
-}
-
-.pattern-trigger-lbl {
-  color: var(--text-dim);
-  margin-right: 8px;
-}
-.pattern-trigger-val {
-  color: var(--cyan);
-  margin-right: 8px;
-}
-.pattern-trigger-chev {
-  color: var(--cyan-dim);
-}
-#patternTrigger {
-  gap: 6px;
-  padding: 0 14px;
-}
-
-.pattern-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-.pattern-divider {
-  border: none;
-  border-top: 1px solid var(--line);
-  margin: 18px 0 12px;
-}
-.btn-secondary.danger {
-  border-color: rgba(255, 138, 61, 0.4);
-  color: var(--warn);
-}
-.btn-secondary.danger:hover {
-  border-color: var(--warn);
-  color: var(--warn);
-  background: rgba(255, 138, 61, 0.08);
-  box-shadow: var(--glow-warn);
-}
-
-.btn-primary:focus-visible,
-.btn-secondary:focus-visible,
-.drawer-handle:focus-visible,
-.drawer-close:focus-visible,
-.mute-btn:focus-visible {
-  outline: 2px solid var(--cyan);
-  outline-offset: 2px;
-}
-.btn-primary.warn:focus-visible {
-  outline-color: var(--warn);
-}
-.step:focus-visible {
-  outline: 1px solid var(--cyan);
-  outline-offset: 1px;
-  z-index: 2;
-  position: relative;
-}
-
-@media (max-width: 720px) {
-  body {
-    padding: 12px 0 24px;
+  .controls-panel.open {
+    transform: translateY(var(--drag, 0px)); visibility: visible;
+    transition: transform 0.32s var(--ease);
   }
-  .container {
-    width: 100vw;
-    gap: 10px;
-    padding: 0 12px;
+  .sheet-head {
+    display: flex; align-items: center; justify-content: space-between; flex: none;
+    padding: 18px 16px 10px; position: relative; touch-action: none; cursor: grab;
   }
-
-  /* Compact header */
-  header {
-    padding-bottom: 8px;
+  .sheet-head::before {
+    content: ""; position: absolute; top: 8px; left: 50%; width: 40px; height: 4px; margin-left: -20px;
+    border-radius: 2px; background: var(--hair-2);
   }
-  h1 {
-    font-size: clamp(1.2rem, 5vw, 1.6rem);
+  .sheet-head h2 { font-family: var(--font-display); font-size: 13px; letter-spacing: 0.24em; color: var(--muted); }
+  .sheet-close {
+    width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--raise-2); color: var(--muted);
   }
-  .subtitle {
-    display: none;
-  }
-  .header-readouts {
+  .sheet-close svg { width: 16px; height: 16px; }
+  #panels {
+    overflow-y: auto; overscroll-behavior: contain; padding: 0 12px calc(16px + env(safe-area-inset-bottom));
     gap: 10px;
   }
-  .readout-inline {
-    font-size: 0.75rem;
+  .card { background: rgba(255, 255, 255, 0.03); }
+  .sheet-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, 0.55);
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
   }
-  .readout-inline .lbl {
-    display: none;
-  }
-  .header-readouts .readout-inline + .readout-inline::before {
-    content: "·";
-    color: var(--text-dim);
-    margin-right: 8px;
-  }
+  .sheet-backdrop.show { opacity: 1; pointer-events: auto; }
+}
 
-  /* Step cells */
-  .step {
-    min-height: 28px;
-  }
-  .steps .step:nth-child(4n+1) {
-    border-left: 1px solid var(--cyan-low);
-  }
-  .track-left {
-    width: 60px;
-    gap: 4px;
-  }
-  .mute-btn {
-    width: 20px;
-    height: 20px;
-  }
-
-  /* Transport stacks */
-  .controls {
+/* Portrait phones: transport becomes a bottom dock in the thumb zone */
+@media (max-width: 699px) and (min-height: 521px) {
+  .app { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .topbar { flex-wrap: nowrap; gap: 10px; }
+  .brand h1 { font-size: 1rem; letter-spacing: 0.16em; }
+  .transport {
+    position: fixed; z-index: 50; left: 0; right: 0; bottom: 0;
+    padding: 12px max(12px, env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(5, 8, 13, 0), rgba(5, 8, 13, 0.92) 30%);
     gap: 8px;
   }
-  .btn-primary {
-    flex: 1 1 calc(50% - 8px);
-    min-width: 0;
-    padding: 0 12px;
-    font-size: 0.65rem;
-  }
-  #patternTrigger {
-    flex: 1 1 100%;
-  }
+  .transport .btn { height: 56px; flex: 1; min-width: 0; padding: 0 12px; }
+  .btn-play { flex: 1.3 !important; padding-left: 10px !important; }
+  .btn-sound { flex: 0 0 auto !important; width: 64px; padding: 0 !important; flex-direction: column; gap: 2px; font-size: 9px; letter-spacing: 0.12em; }
+}
 
-  /* Drawer becomes a bottom sheet overlay */
-  .drawer {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    max-height: 0;
-    z-index: 50;
-    transition: max-height 240ms ease-out;
-    box-shadow: 0 -1px 0 var(--line), 0 -16px 24px rgba(0, 0, 0, 0.4);
-  }
-  .drawer.open {
-    max-height: 65vh;
-  }
-  .drawer-body {
-    max-height: calc(65vh - 56px);
-    overflow-y: auto;
-  }
-  .drawer-handle {
-    position: sticky;
-    bottom: 0;
-    background: var(--bg);
-    z-index: 40;
-  }
+/* Very narrow: hide CHORD readout label crowding, compress grid toolbar */
+@media (max-width: 420px) {
+  .brand h1 { display: none; }
+  .segmented button { padding: 0 10px; font-size: 11px; letter-spacing: 0.06em; height: 34px; }
+  .segmented { flex: 1; justify-content: space-between; }
+}
 
-  /* Toggle grid 2 columns on mobile, label below switch */
-  .toggle-grid {
-    grid-template-columns: repeat(2, 1fr);
+/* Narrow: show one page of 8 steps at a time so cells stay finger-sized */
+@media (max-width: 559px) {
+  .pages { display: flex; }
+  .pages button { position: relative; }
+  .pages button.playing::after {
+    content: ""; position: absolute; top: 5px; right: 6px; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--cyan); box-shadow: 0 0 6px var(--cyan);
   }
-  .toggle-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
+  .sequencer[data-page="0"] .beat[data-page="1"],
+  .sequencer[data-page="1"] .beat[data-page="0"] { display: none; }
+  .steps { gap: 6px; }
+}
 
-  /* Slider grid 1 column on mobile */
-  .slider-grid {
-    grid-template-columns: 1fr;
-    gap: 6px 0;
+/* Short landscape phones: one-row header with transport, no visualiser, side sheet */
+@media (max-height: 520px) {
+  .app { gap: 8px; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .topbar { flex-wrap: nowrap; gap: 10px; }
+  .brand h1 { font-size: 0.95rem; letter-spacing: 0.16em; }
+  .viz-wrap { display: none; }
+  .btn { height: 40px; padding: 0 14px; font-size: 11px; }
+  .btn-play { min-width: 104px; padding-left: 5px; }
+  .btn-play .ico { width: 30px; height: 30px; }
+  .btn-tension { min-width: 104px; }
+  .readout { height: 40px; }
+  .grid-card { padding: 8px; gap: 8px; }
+  .grid-toolbar { flex-wrap: nowrap; }
+  .segmented button, .icon-btn, .pill-lg { height: 32px; }
+  .sequencer { gap: 4px; }
+  .controls-panel {
+    left: auto; top: 0; width: min(380px, 88vw); max-height: none;
+    border-radius: 22px 0 0 22px; border-top: 0; border-left: 1px solid var(--hair-2);
+    transform: translateX(calc(100% + 24px));
   }
-  .pattern-grid {
-    grid-template-columns: 1fr;
-  }
+  .controls-panel.open { transform: translateX(var(--drag, 0px)); }
+  .sheet-head::before { display: none; }
+  #panels { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+}
+@media (max-height: 520px) and (max-width: 820px) {
+  .readout[data-k="bar"], .brand h1 { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .drawer {
-    transition: none;
-  }
-  .toggle-knob {
-    transition: none;
-  }
-  #tensionBtn:not(.active) {
-    animation: none;
-  }
-  .status.playing {
-    animation: none;
-  }
-  .step.active {
-    transition: none;
-  }
+  *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
 }
 </style>
 </head>
@@ -765,218 +512,89 @@ input[type="range"].slider:focus-visible {
 
 <div class="tension-overlay" id="tensionOverlay"></div>
 
-<div class="container">
+<div class="app">
 
-  <header>
-    <div class="logo">
-      <h1>DARTH PUNT</h1>
-      <div class="subtitle">CINEMATIC GENERATIVE SEQUENCER</div>
+  <header class="topbar">
+    <div class="brand">
+      <img src="./icons/icon.svg" alt="" width="36" height="36">
+      <div>
+        <h1>DARTH PUNT</h1>
+        <p>Cinematic generative sequencer</p>
+      </div>
     </div>
-    <div class="header-readouts">
-  <span class="readout-inline"><span class="lbl">BAR</span> <span class="val" id="barVal"
-    >—</span></span>
-  <span class="readout-inline"><span class="lbl">BPM</span> <span class="val" id="bpmReadout"
-    >120</span></span>
-  <span class="readout-inline"><span class="lbl">D</span> <span class="val" id="dramaReadout"
-    >5</span></span>
-  <span class="master-vol">
-    <span class="lbl">VOL</span>
-    <input type="range" class="slider" id="masterVolSlider" min="0" max="1" value="0.8" step="0.01" aria-label="Master volume" />
-    <span class="val" id="masterVolVal">0.80</span>
-  </span>
-</div>
+
+    <div class="transport" role="group" aria-label="Transport">
+      <button class="btn btn-play" id="playBtn" aria-pressed="false">
+        <span class="ico" aria-hidden="true">
+          <svg class="i-play" viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg>
+          <svg class="i-stop" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1.5" fill="currentColor"/></svg>
+        </span>
+        <span id="playLabel">PLAY</span>
+      </button>
+      <button class="btn btn-tension" id="tensionBtn" aria-disabled="true" aria-pressed="false"
+        title="Build tension for four bars, then drop (while playing)">
+        <span>TENSION</span><span class="sub" id="tensionSub" aria-live="polite"></span>
+      </button>
+      <button class="btn btn-sound" id="soundBtn" aria-controls="controls" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+        <span>SOUND</span>
+      </button>
+    </div>
+
+    <div class="readouts" aria-live="off">
+      <div class="readout" data-k="bar"><span class="lbl">BAR</span><span class="val" id="barVal">—</span></div>
+      <div class="readout"><span class="lbl">CHORD</span><span class="val" id="chordVal">—</span></div>
+      <div class="readout"><span class="lbl">BPM</span><span class="val" id="bpmReadout">120</span></div>
+    </div>
   </header>
 
-  <!-- Visualiser -->
-  <div class="viz-wrap">
-    <canvas id="viz"></canvas>
-    <div class="chord-flash" id="chordFlash"></div>
-  </div>
-
-  <!-- Automation bars -->
-  <div class="auto-bars">
-    <div class="auto-row">
-      <div class="auto-label">FILTER</div>
-      <div class="auto-track"><div class="auto-fill" id="fillFilter"></div></div>
-      <div class="auto-val" id="valFilter">—</div>
-    </div>
-    <div class="auto-row">
-      <div class="auto-label">PUMP</div>
-      <div class="auto-track"><div class="auto-fill" id="fillPump"></div></div>
-      <div class="auto-val" id="valPump">—</div>
-    </div>
-  </div>
-
-  <!-- Sequencer -->
-  <div class="sequencer" id="sequencer"></div>
-
-  <!-- Transport + Tension -->
-  <div class="controls">
-    <button class="btn-primary" id="playBtn">PLAY</button>
-    <button class="btn-primary warn" id="tensionBtn">TENSION</button>
-    <button class="btn-secondary" id="patternTrigger" aria-haspopup="true">
-      <span class="pattern-trigger-lbl">PATTERN</span>
-      <span class="pattern-trigger-val" id="patternTriggerVal">—</span>
-      <span class="pattern-trigger-chev">▾</span>
-    </button>
-  </div>
-
-  <div class="status-row">
-    <div class="status" id="status">— PRESS PLAY —</div>
-    <div class="event-log" id="eventLog"></div>
-  </div>
-
-  <!-- Drawer handle (always visible at bottom of stage) -->
-  <button class="drawer-handle" id="drawerHandle" aria-controls="drawer" aria-expanded="false">
-    <span class="drawer-handle-icon">≡</span>
-    <span class="drawer-handle-label">CONTROLS</span>
-  </button>
-
-  <!-- Drawer (controls tucked away) -->
-  <section class="drawer" id="drawer" aria-hidden="true">
-    <div class="drawer-tabs" role="tablist">
-      <button class="btn-secondary drawer-tab active" data-tab="mix" role="tab" aria-selected="true">
-        MIX
-      </button>
-      <button class="btn-secondary drawer-tab" data-tab="auto" role="tab" aria-selected="false">
-        AUTO
-      </button>
-      <button class="btn-secondary drawer-tab" data-tab="patterns" role="tab" aria-selected="false">
-        PATTERNS
-      </button>
-      <button class="drawer-close" id="drawerClose" aria-label="Close controls drawer">✕</button>
-    </div>
-    <div class="drawer-body">
-      <div class="drawer-pane active" data-pane="mix" role="tabpanel">
-  <div class="slider-grid">
-    <div class="slider-row">
-      <div class="slider-head"><span class="lbl">BPM</span><span class="val" id="bpmVal">120</span></div>
-      <input type="range" class="slider" id="bpmSlider" min="60" max="180" value="120" />
-    </div>
-    <div class="slider-row">
-      <div class="slider-head"><span class="lbl">PUMP</span><span class="val" id="pumpVal">0.65</span></div>
-      <input type="range" class="slider" id="pumpSlider" min="0" max="0.9" value="0.65" step="0.01" />
-    </div>
-    <div class="slider-row">
-      <div class="slider-head"><span class="lbl">BPM DRIFT</span><span class="val" id="driftVal">2</span></div>
-      <input type="range" class="slider" id="driftSlider" min="0" max="8" value="2" step="0.5" />
-    </div>
-    <div class="slider-row">
-      <div class="slider-head"><span class="lbl">CUTOFF</span><span class="val" id="cutoffVal">300</span></div>
-      <input type="range" class="slider" id="cutoffSlider" min="100" max="12000" value="300" />
-    </div>
-    <div class="slider-row">
-      <div class="slider-head"><span class="lbl">RESONANCE</span><span class="val" id="resVal">5.0</span></div>
-      <input type="range" class="slider" id="resSlider" min="0.5" max="18" value="5" step="0.1" />
-    </div>
-    <div class="slider-row">
-      <div class="slider-head">
-        <span class="lbl">REVERB</span>
-        <span class="auto-meter" aria-hidden="true">
-          <span class="auto-meter-fill" id="fillReverb"></span>
-          <span class="auto-meter-val" id="valReverb"></span>
-        </span>
-        <span class="val" id="reverbVal">0.45</span>
+  <main class="stage">
+    <div class="viz-wrap">
+      <canvas id="viz" aria-hidden="true"></canvas>
+      <div class="chord-flash" id="chordFlash"></div>
+      <div class="viz-hint">PRESS PLAY</div>
+      <div class="viz-overlay">
+        <div class="status" id="status" role="status">STOPPED</div>
+        <div class="event-log" id="eventLog" aria-live="polite"></div>
       </div>
-      <input type="range" class="slider" id="reverbSlider" min="0" max="1" value="0.45" step="0.01" />
     </div>
-    <div class="slider-row">
-      <div class="slider-head">
-        <span class="lbl">DETUNE</span>
-        <span class="auto-meter" aria-hidden="true">
-          <span class="auto-meter-fill" id="fillDetune"></span>
-          <span class="auto-meter-val" id="valDetune"></span>
-        </span>
-        <span class="val" id="detuneVal">8</span>
+
+    <section class="grid-card" aria-label="Step sequencer">
+      <div class="grid-toolbar">
+        <div class="segmented" role="group" aria-label="Pattern">
+          <button data-pattern="tron" aria-pressed="false">TRON</button>
+          <button data-pattern="daft" aria-pressed="false">DAFT</button>
+          <button data-pattern="derezzed" aria-pressed="false">DEREZZED</button>
+          <button data-pattern="random" aria-pressed="false">RANDOM</button>
+        </div>
+        <div class="segmented pages" id="pageBtns" role="group" aria-label="Steps shown">
+          <button data-page="0" aria-pressed="true">1–8</button>
+          <button data-page="1" aria-pressed="false">9–16</button>
+        </div>
+        <span class="spacer"></span>
+        <span id="mutateSlot"></span>
+        <button class="icon-btn" id="clearBtn" title="Clear every step">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+          CLEAR
+        </button>
       </div>
-      <input type="range" class="slider" id="detuneSlider" min="0" max="35" value="8" />
+      <div class="sequencer" id="sequencer"></div>
+    </section>
+  </main>
+
+  <aside class="controls-panel" id="controls" aria-label="Sound controls">
+    <div class="sheet-head" id="sheetGrip">
+      <h2>SOUND</h2>
+      <button class="sheet-close" id="sheetClose" aria-label="Close sound controls">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>
+      </button>
     </div>
-    <div class="slider-row">
-      <div class="slider-head"><span class="lbl">DRAMA</span><span class="val" id="dramaVal">5</span></div>
-      <input type="range" class="slider" id="dramaSlider" min="1" max="10" value="5" step="1" />
-    </div>
-    <div class="slider-row">
-      <div class="slider-head"><span class="lbl">CHORD VOL</span><span class="val" id="chordVolVal">0.30</span></div>
-      <input type="range" class="slider" id="chordVolSlider" min="0" max="0.8" value="0.3" step="0.01" />
-    </div>
-    <div class="slider-row">
-      <div class="slider-head"><span class="lbl">CHORD SUSTAIN</span><span class="val" id="chordSusVal">3.0</span></div>
-      <input type="range" class="slider" id="chordSusSlider" min="0.5" max="6" value="3" step="0.1" />
-    </div>
-    <div class="slider-row">
-      <div class="slider-head"><span class="lbl">PAD VOL</span><span class="val" id="padVolVal">0.18</span></div>
-      <input type="range" class="slider" id="padVolSlider" min="0" max="0.5" value="0.18" step="0.01" />
-    </div>
-  </div>
-</div>
-      <div class="drawer-pane" data-pane="auto" role="tabpanel">
-  <div class="toggle-grid">
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="mutateEnabled" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">MUTATE</span>
-    </label>
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="sweepEnabled" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">FILTER SWEEP</span>
-    </label>
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="pumpAutoEnabled" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">PUMP AUTO</span>
-    </label>
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="detuneAutoEnabled" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">DETUNE DRIFT</span>
-    </label>
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="reverbAutoEnabled" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">REVERB SWELL</span>
-    </label>
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="chordsEnabled" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">CHORD BLASTS</span>
-    </label>
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="padsEnabled" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">PADS</span>
-    </label>
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="arpRumbleEnabled" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">ARP RUMBLE</span>
-    </label>
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="bpmDriftEnabled" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">BPM DRIFT</span>
-    </label>
-    <label class="toggle-row">
-      <span class="toggle"><input type="checkbox" data-toggle="followChords" checked role="switch" />
-        <span class="toggle-track"></span><span class="toggle-knob"></span></span>
-      <span class="toggle-label">FOLLOW CHORDS</span>
-    </label>
-  </div>
-</div>
-      <div class="drawer-pane" data-pane="patterns" role="tabpanel">
-  <div class="pattern-grid">
-    <button class="btn-primary pattern-pick" data-pattern="tron">TRON</button>
-    <button class="btn-primary pattern-pick" data-pattern="daft">DAFT</button>
-    <button class="btn-primary pattern-pick" data-pattern="derezzed">DEREZZED</button>
-    <button class="btn-primary pattern-pick" data-pattern="random">RANDOM</button>
-  </div>
-  <hr class="pattern-divider" />
-  <button class="btn-secondary danger" id="clearBtn">✕ CLEAR GRID</button>
-</div>
-    </div>
-  </section>
+    <div id="panels"></div>
+  </aside>
 
 </div>
+
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
 
 <script type="module" src="./dist/main.js"></script>
 

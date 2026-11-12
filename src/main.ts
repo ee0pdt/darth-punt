@@ -11,21 +11,27 @@ import { isSchedulerRunning, startScheduler, stopScheduler } from "./audio/sched
 import { cancelTension, triggerTension } from "./audio/tension.ts";
 import { mountSequencer, renderGrid } from "./ui/sequencer.ts";
 import { loadPattern, mountControls } from "./ui/controls.ts";
-import { mountDrawer } from "./ui/drawer.ts";
+import { mountSheet } from "./ui/sheet.ts";
+import { clearLive, setBarReadout, setBpmReadout, setChordReadout } from "./ui/readouts.ts";
 import { mountVisualiser, startVisualiser } from "./visual/visualiser.ts";
 import { registerServiceWorker } from "./pwa.ts";
 import { VERSION } from "./version.ts";
 
 function setPlayUI(playing: boolean): void {
   const btn = document.getElementById("playBtn");
+  const label = document.getElementById("playLabel");
   const status = document.getElementById("status");
-  if (btn) {
-    btn.classList.toggle("active", playing);
-    btn.textContent = playing ? "STOP" : "PLAY";
-  }
-  if (status) {
-    status.textContent = playing ? "● RUNNING" : "— STOPPED —";
-    status.classList.toggle("playing", playing);
+  btn?.classList.toggle("active", playing);
+  btn?.setAttribute("aria-pressed", playing ? "true" : "false");
+  if (label) label.textContent = playing ? "STOP" : "PLAY";
+  if (status) status.textContent = playing ? "RUNNING" : "STOPPED";
+  document.body.classList.toggle("is-playing", playing);
+  document.getElementById("tensionBtn")?.setAttribute("aria-disabled", playing ? "false" : "true");
+  if (!playing) {
+    clearLive();
+    setBarReadout(null);
+    setChordReadout(null);
+    setBpmReadout(state.baseBpm);
   }
 }
 
@@ -53,7 +59,7 @@ registerServiceWorker();
 mountSequencer();
 mountVisualiser();
 mountControls({ onPlay: togglePlay, onTension: triggerTension });
-mountDrawer();
+mountSheet();
 
 loadPattern("tron");
 
