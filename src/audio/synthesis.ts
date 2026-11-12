@@ -8,7 +8,7 @@
 import { state } from "../state.ts";
 import { flashChord, showEvent } from "../ui/events.ts";
 import { getAudio, midiToHz } from "./graph.ts";
-import { ARP_RUMBLES, CHORDS, PAD_CHORDS } from "./rumbles.ts";
+import { ARP_RUMBLES, CHORDS, PROGRESSION, shiftInScale } from "./rumbles.ts";
 
 export function triggerKick(t: number): void {
   const audio = getAudio();
@@ -176,11 +176,17 @@ export function triggerArp(t: number, note: number, vol = 0.15): void {
   osc.stop(t + 0.12);
 }
 
-export function triggerChordBlast(t: number): void {
+/**
+ * Big detuned stab. Pass `chordIdx` (a PROGRESSION index) to voice the chord
+ * the harmony is landing on; omit it for a random colour from CHORDS.
+ */
+export function triggerChordBlast(t: number, chordIdx?: number): void {
   const audio = getAudio();
   if (!audio) return;
   const { actx, filterNode } = audio;
-  const chord = CHORDS[Math.floor(Math.random() * CHORDS.length)];
+  const chord = chordIdx === undefined
+    ? CHORDS[Math.floor(Math.random() * CHORDS.length)]
+    : CHORDS[PROGRESSION[chordIdx % PROGRESSION.length].blast];
   const attackTime = 0.04;
   chord.forEach((note) => {
     const hz = midiToHz(note);
@@ -216,7 +222,8 @@ export function triggerPad(t: number, chordIdx: number, announce = false): void 
   const audio = getAudio();
   if (!audio) return;
   const { actx, filterNode } = audio;
-  const notes = PAD_CHORDS[chordIdx % PAD_CHORDS.length];
+  const prog = PROGRESSION[chordIdx % PROGRESSION.length];
+  const notes = prog.pad;
 
   if (activePad) {
     const prev = activePad;
@@ -260,13 +267,14 @@ export function triggerPad(t: number, chordIdx: number, announce = false): void 
     o2.stop(t + 6.5);
     oscs.push(o1, o2);
   });
-  if (announce) showEvent("◈ PAD SWELL");
+  if (announce) showEvent(`◈ PAD SWELL · ${prog.name}`);
 }
 
-export function triggerArpRumble(t: number): void {
+/** `shift` moves the rumble along the scale (see PROGRESSION) to lead into the next chord. */
+export function triggerArpRumble(t: number, shift = 0): void {
   const pattern = ARP_RUMBLES[state.currentRumble % ARP_RUMBLES.length];
   state.currentRumble++;
   const stepDur = (60 / state.bpm) / 2;
-  pattern.forEach((semi, i) => triggerArp(t + i * stepDur, 36 + semi, 0.18));
+  pattern.forEach((semi, i) => triggerArp(t + i * stepDur, shiftInScale(36 + semi, shift), 0.18));
   showEvent("▸ ARP RUMBLE");
 }

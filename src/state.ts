@@ -43,7 +43,9 @@ export interface AppState {
 
   // Music cursors
   currentRumble: number;
-  currentPadChord: number;
+
+  // Harmony: bass/lead/arp follow the PROGRESSION chord of the current bar
+  followChords: boolean;
 
   // Tension
   tensionActive: boolean;
@@ -97,7 +99,8 @@ export const state: AppState = {
   detuneTarget: 8,
 
   currentRumble: 0,
-  currentPadChord: 0,
+
+  followChords: true,
 
   tensionActive: false,
   tensionReleaseBar: -1,

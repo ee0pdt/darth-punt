@@ -6,7 +6,7 @@
  */
 
 import { state } from "../state.ts";
-import { PAD_CHORDS } from "./rumbles.ts";
+import { BARS_PER_CHORD, chordForBar, PROGRESSION, shiftInScale } from "./rumbles.ts";
 import { STEP_COUNT, STICKY, TRACKS } from "../patterns.ts";
 import { getAudio, rampTo } from "./graph.ts";
 import { releaseTension } from "./tension.ts";
@@ -36,6 +36,9 @@ const SCHEDULE_INTERVAL = 50;
 let nextNoteTime = 0;
 let schedulerTimer: number | null = null;
 let barTracker = 0;
+// Bar whose steps are currently being scheduled. Set synchronously at step 0
+// (not in the deferred onBarStart) so the downbeat already uses the new chord.
+let schedBar = 0;
 
 export function isSchedulerRunning(): boolean {
   return schedulerTimer !== null;
@@ -46,6 +49,7 @@ export function startScheduler(): void {
   if (!audio) return;
   state.currentStep = 0;
   barTracker = 0;
+  schedBar = 0;
   state.barNumber = 0;
   state.sweepBarCount = 0;
   nextNoteTime = audio.actx.currentTime + 0.05;
@@ -77,11 +81,15 @@ function tick(): void {
       // will be reused by the next bar before the deferred callback fires.
       const bn = barTracker;
       const bst = nextNoteTime;
+      schedBar = bn;
       barTracker++;
       setTimeout(() => {
         if (state.isPlaying) onBarStart(bn, bst);
       }, 0);
     }
+
+    const chordIdx = chordForBar(schedBar);
+    const shift = state.followChords ? PROGRESSION[chordIdx].shift : 0;
 
     TRACKS.forEach((track, ti) => {
       if (state.mutes[ti]) return;
@@ -99,16 +107,16 @@ function tick(): void {
           triggerHihat(t);
           break;
         case "bass":
-          if (track.notes) triggerBass(t, track.notes[state.currentStep]);
+          if (track.notes) triggerBass(t, shiftInScale(track.notes[state.currentStep], shift));
           break;
         case "lead":
-          if (track.notes) triggerLead(t, track.notes[state.currentStep]);
+          if (track.notes) triggerLead(t, shiftInScale(track.notes[state.currentStep], shift));
           break;
         case "arp":
-          if (track.notes) triggerArp(t, track.notes[state.currentStep]);
+          if (track.notes) triggerArp(t, shiftInScale(track.notes[state.currentStep], shift));
           break;
         case "pad":
-          triggerPad(t, state.currentPadChord);
+          triggerPad(t, chordIdx);
           break;
       }
     });
@@ -139,7 +147,7 @@ export function onBarStart(barNum: number, barStartTime: number): void {
   // Tension release lands on this bar's downbeat. It owns the filter + reverb
   // for this bar, so the sweep and reverb swell below sit this one out.
   const releasing = state.tensionActive && barNum >= state.tensionReleaseBar;
-  if (releasing) releaseTension(barStartTime);
+  if (releasing) releaseTension(barStartTime, state.followChords ? chordForBar(barNum) : undefined);
 
   // Filter sweep — exponential ramp from sweepMin to sweepMax across sweepBars.
   // On wrap (count 0) freq is sweepMin, so the same ramp drops back to the bottom.
@@ -205,19 +213,20 @@ export function onBarStart(barNum: number, barStartTime: number): void {
   // Chord blast at the bar transition every 8 bars
   if (state.chordsEnabled && barNum % 8 === 7) {
     const nextBar = barStartTime + (60 / state.bpm) * 4;
-    triggerChordBlast(nextBar);
+    triggerChordBlast(nextBar, state.followChords ? chordForBar(barNum + 1) : undefined);
   }
 
-  // Pad swell every 4 bars (rotating through PAD_CHORDS)
-  if (state.padsEnabled && barNum % 4 === 0 && barNum > 0) {
-    triggerPad(barStartTime, state.currentPadChord, true);
-    state.currentPadChord = (state.currentPadChord + 1) % PAD_CHORDS.length;
+  // Pad swell on each chord change of the PROGRESSION
+  if (state.padsEnabled && barNum % BARS_PER_CHORD === 0 && barNum > 0) {
+    triggerPad(barStartTime, chordForBar(barNum), true);
   }
 
   // Arp rumble lands on beat 4 of every 4th bar
   if (state.arpRumbleEnabled && barNum % 4 === 3) {
+    // ...pitched to the chord it leads into when following chords
     const lastBeat = barStartTime + (60 / state.bpm) * 3;
-    triggerArpRumble(lastBeat);
+    const next = PROGRESSION[chordForBar(barNum + 1)];
+    triggerArpRumble(lastBeat, state.followChords ? next.shift : 0);
   }
 }
 
