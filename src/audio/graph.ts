@@ -2,13 +2,18 @@
  * Audio graph: builds the AudioContext + node chain once, then exposes it as
  * a singleton `audio` reference that every other audio module reads from.
  *
- *   source -> filter -> pump -> dry + reverb + delayWet -> master -> limiter -> analyser -> out
+ *   source -> filter -> pump -> dry + reverb + delayWet -> headroom -> master -> limiter -> analyser -> out
  */
 
 import { state } from "../state.ts";
 import type { AudioRefs } from "../types.ts";
 
 let audio: AudioRefs | null = null;
+
+// Fixed trim on the summed mix. Voices are balanced against each other at
+// fairly hot levels (kick alone peaks at 1.4), so without this the mix runs
+// several dB over full scale and the limiter is crushing it constantly.
+const HEADROOM = 0.5;
 
 export function getAudio(): AudioRefs | null {
   return audio;
@@ -64,10 +69,13 @@ export function initAudio(): AudioRefs {
   pumpGain.connect(dryGain);
   pumpGain.connect(reverbNode);
   pumpGain.connect(delayNode);
-  dryGain.connect(masterGain);
+  const headroom = actx.createGain();
+  headroom.gain.value = HEADROOM;
+  dryGain.connect(headroom);
   reverbNode.connect(reverbGain);
-  reverbGain.connect(masterGain);
-  delayWet.connect(masterGain);
+  reverbGain.connect(headroom);
+  delayWet.connect(headroom);
+  headroom.connect(masterGain);
   masterGain.connect(limiter);
   limiter.connect(analyser);
   analyser.connect(actx.destination);
