@@ -34,6 +34,7 @@ export interface AppState {
   sweepMin: number;
   sweepMax: number;
   manualCutoff: number;
+  resonance: number;
 
   // Automation targets
   pumpTarget: number;
@@ -46,6 +47,7 @@ export interface AppState {
 
   // Tension
   tensionActive: boolean;
+  tensionReleaseBar: number;
 
   // Evolution flags
   mutateEnabled: boolean;
@@ -88,6 +90,7 @@ export const state: AppState = {
   sweepMin: 200,
   sweepMax: 10000,
   manualCutoff: 300,
+  resonance: 5,
 
   pumpTarget: 0.65,
   reverbTarget: 0.45,
@@ -97,6 +100,7 @@ export const state: AppState = {
   currentPadChord: 0,
 
   tensionActive: false,
+  tensionReleaseBar: -1,
 
   mutateEnabled: true,
   sweepEnabled: true,

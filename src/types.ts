@@ -31,6 +31,8 @@ export interface AudioRefs {
   delayNode: DelayNode;
   delayFeedback: GainNode;
   delayWet: GainNode;
+  limiter: DynamicsCompressorNode;
   analyser: AnalyserNode;
   analyserData: Uint8Array<ArrayBuffer>;
+  noiseBuffer: AudioBuffer;
 }

@@ -25,23 +25,29 @@ export function triggerKick(t: number): void {
   osc.start(t);
   osc.stop(t + 0.42);
 
-  // Side-chain pump: dip master at the kick, recover over ~220ms
-  if (state.pumpAmount > 0) {
+  // Side-chain pump: dip master at the kick, recover over ~220ms.
+  // With PUMP automation on, the per-bar target from onBarStart drives depth.
+  const pump = state.pumpAutoEnabled ? state.pumpTarget : state.pumpAmount;
+  if (pump > 0) {
     pumpGain.gain.cancelScheduledValues(t);
-    pumpGain.gain.setValueAtTime(1 - state.pumpAmount * 0.8, t);
+    pumpGain.gain.setValueAtTime(1 - pump * 0.8, t);
     pumpGain.gain.linearRampToValueAtTime(1, t + 0.22);
   }
+}
+
+// Start each drum hit at a random point in the shared noise buffer so
+// consecutive hits don't sound identical.
+function randomNoiseOffset(len: number): number {
+  const total = getAudio()?.noiseBuffer.duration ?? 1;
+  return Math.random() * Math.max(0, total - len);
 }
 
 export function triggerSnare(t: number): void {
   const audio = getAudio();
   if (!audio) return;
-  const { actx, filterNode } = audio;
-  const buf = actx.createBuffer(1, actx.sampleRate * 0.22, actx.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const { actx, filterNode, noiseBuffer } = audio;
   const n = actx.createBufferSource();
-  n.buffer = buf;
+  n.buffer = noiseBuffer;
   const hp = actx.createBiquadFilter();
   hp.type = "highpass";
   hp.frequency.value = 1500;
@@ -51,19 +57,16 @@ export function triggerSnare(t: number): void {
   n.connect(hp);
   hp.connect(g);
   g.connect(filterNode);
-  n.start(t);
+  n.start(t, randomNoiseOffset(0.25));
   n.stop(t + 0.25);
 }
 
 export function triggerHihat(t: number): void {
   const audio = getAudio();
   if (!audio) return;
-  const { actx, filterNode } = audio;
-  const buf = actx.createBuffer(1, actx.sampleRate * 0.07, actx.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const { actx, filterNode, noiseBuffer } = audio;
   const n = actx.createBufferSource();
-  n.buffer = buf;
+  n.buffer = noiseBuffer;
   const hp = actx.createBiquadFilter();
   hp.type = "highpass";
   hp.frequency.value = 7000;
@@ -73,7 +76,7 @@ export function triggerHihat(t: number): void {
   n.connect(hp);
   hp.connect(g);
   g.connect(filterNode);
-  n.start(t);
+  n.start(t, randomNoiseOffset(0.09));
   n.stop(t + 0.09);
 }
 
@@ -180,12 +183,34 @@ export function triggerChordBlast(t: number): void {
   showEvent("⚡ CHORD BLAST");
 }
 
-export function triggerPad(t: number, chordIdx: number): void {
+// The pad currently sounding. A new pad chokes it, so grid PAD steps and
+// 4-bar swells never stack up into dozens of overlapping 6s voices.
+let activePad: { bus: GainNode; oscs: OscillatorNode[] } | null = null;
+
+export function triggerPad(t: number, chordIdx: number, announce = false): void {
   if (!state.padsEnabled) return;
   const audio = getAudio();
   if (!audio) return;
   const { actx, filterNode } = audio;
   const notes = PAD_CHORDS[chordIdx % PAD_CHORDS.length];
+
+  if (activePad) {
+    const prev = activePad;
+    prev.bus.gain.cancelScheduledValues(t);
+    prev.bus.gain.setTargetAtTime(0, t, 0.15);
+    for (const o of prev.oscs) {
+      try {
+        o.stop(t + 1);
+      } catch {
+        // already stopped
+      }
+    }
+  }
+  const bus = actx.createGain();
+  bus.connect(filterNode);
+  const oscs: OscillatorNode[] = [];
+  activePad = { bus, oscs };
+
   notes.forEach((note) => {
     const hz = midiToHz(note);
     const o1 = actx.createOscillator();
@@ -204,13 +229,14 @@ export function triggerPad(t: number, chordIdx: number): void {
     g.gain.exponentialRampToValueAtTime(0.001, t + 6.0);
     o1.connect(g);
     o2.connect(g);
-    g.connect(filterNode);
+    g.connect(bus);
     o1.start(t);
     o2.start(t);
     o1.stop(t + 6.5);
     o2.stop(t + 6.5);
+    oscs.push(o1, o2);
   });
-  showEvent("◈ PAD SWELL");
+  if (announce) showEvent("◈ PAD SWELL");
 }
 
 export function triggerArpRumble(t: number): void {
