@@ -17,7 +17,8 @@ const result = await esbuild.build({
   outfile: "dist/main.js",
   format: "esm",
   target: "es2022",
-  sourcemap: "inline",
+  minify: true,
+  sourcemap: "linked",
   logLevel: "info",
   define: { __GIT_SHA__: JSON.stringify(gitSha) },
 });

@@ -25,9 +25,9 @@ import { renderGrid, setActiveStep } from "../ui/sequencer.ts";
 import {
   setBarReadout,
   setBpmReadout,
-  setCutoffReadout,
-  setDetuneReadout,
-  updateAutoBar,
+  setChordReadout,
+  setLive,
+  setTensionCountdown,
 } from "../ui/readouts.ts";
 
 const LOOK_AHEAD = 0.1;
@@ -140,6 +140,7 @@ export function onBarStart(barNum: number, barStartTime: number): void {
   if (!audio) return;
   state.barNumber = barNum;
   setBarReadout(barNum + 1);
+  setChordReadout(PROGRESSION[chordForBar(barNum)].name);
 
   const drama = state.dramaLevel / 10;
   const now = audio.actx.currentTime;
@@ -148,6 +149,7 @@ export function onBarStart(barNum: number, barStartTime: number): void {
   // for this bar, so the sweep and reverb swell below sit this one out.
   const releasing = state.tensionActive && barNum >= state.tensionReleaseBar;
   if (releasing) releaseTension(barStartTime, state.followChords ? chordForBar(barNum) : undefined);
+  setTensionCountdown(state.tensionActive ? state.tensionReleaseBar - barNum : null);
 
   // Filter sweep — exponential ramp from sweepMin to sweepMax across sweepBars.
   // On wrap (count 0) freq is sweepMin, so the same ramp drops back to the bottom.
@@ -156,8 +158,7 @@ export function onBarStart(barNum: number, barStartTime: number): void {
     const t = state.sweepBarCount / state.sweepBars;
     const freq = state.sweepMin * Math.pow(state.sweepMax / state.sweepMin, t);
     rampTo(audio.filterNode.frequency, freq, now, 0.5);
-    updateAutoBar("fillFilter", "valFilter", t * 100, Math.round(freq) + "Hz");
-    setCutoffReadout(Math.round(freq));
+    setLive("cutoff", freq);
   }
 
   // Pump automation — builds with filter, peaks before chord blasts
@@ -165,7 +166,7 @@ export function onBarStart(barNum: number, barStartTime: number): void {
     const cycle = barNum % 8;
     const pumpNew = Math.min(0.9, state.pumpAmount + (cycle / 8) * drama * 0.3);
     state.pumpTarget = pumpNew;
-    updateAutoBar("fillPump", "valPump", (pumpNew / 0.9) * 100, pumpNew.toFixed(2));
+    setLive("pump", pumpNew);
   }
 
   // Reverb swell — peaks at chord blast bars (6-7 of each 8)
@@ -174,12 +175,7 @@ export function onBarStart(barNum: number, barStartTime: number): void {
     const reverbNew = state.reverbMix + (cycle >= 6 ? drama * 0.35 : 0);
     state.reverbTarget = Math.min(0.95, reverbNew);
     rampTo(audio.reverbGain.gain, state.reverbTarget, now, 1.5);
-    updateAutoBar(
-      "fillReverb",
-      "valReverb",
-      state.reverbTarget * 100,
-      state.reverbTarget.toFixed(2),
-    );
+    setLive("reverb", state.reverbTarget);
   }
 
   // Detune drift — slow sine wave around baseDetune scaled by drama
@@ -188,13 +184,7 @@ export function onBarStart(barNum: number, barStartTime: number): void {
     const detuneNew = state.baseDetune + Math.sin(driftCycle * Math.PI * 2) * drama * 8;
     state.detuneTarget = Math.max(0, detuneNew);
     state.detune = state.detuneTarget;
-    updateAutoBar(
-      "fillDetune",
-      "valDetune",
-      (state.detuneTarget / 35) * 100,
-      Math.round(state.detuneTarget),
-    );
-    setDetuneReadout(Math.round(state.detuneTarget));
+    setLive("detune", state.detuneTarget);
   }
 
   // BPM drift — gentle wobble around baseBpm; updates delay time to match
@@ -203,6 +193,7 @@ export function onBarStart(barNum: number, barStartTime: number): void {
     const newBpm = state.baseBpm + Math.sin(driftCycle * Math.PI * 2) * state.bpmDriftAmount;
     state.bpm = Math.round(newBpm);
     setBpmReadout(state.bpm);
+    setLive("bpm", state.bpm);
     // Glide rather than jump, so the echo tail doesn't click or warble
     audio.delayNode.delayTime.setTargetAtTime((60 / state.bpm) * 0.75, now, 0.1);
   }

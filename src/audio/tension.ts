@@ -8,6 +8,7 @@ import { state } from "../state.ts";
 import { getAudio, rampTo } from "./graph.ts";
 import { triggerChordBlast } from "./synthesis.ts";
 import { setTensionButton, setTensionOverlay, showEvent } from "../ui/events.ts";
+import { setTensionCountdown } from "../ui/readouts.ts";
 
 /** Bars of build before the release downbeat. */
 const TENSION_BARS = 4;
@@ -20,6 +21,7 @@ export function triggerTension(): void {
   state.tensionReleaseBar = state.barNumber + 1 + TENSION_BARS;
   setTensionButton(true);
   setTensionOverlay(true);
+  setTensionCountdown(state.tensionReleaseBar - state.barNumber);
   showEvent("▲ TENSION BUILDING");
 
   // Close filter, push resonance, swell reverb over 2s
